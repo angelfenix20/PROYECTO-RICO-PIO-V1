@@ -1,3 +1,211 @@
 {
-    "tasa_usd": 470.0
+    "tasa_usd": 468.0,
+    "grupos": [
+        {
+            "codigo": "01",
+            "nombre": "SUPER PIZZAS",
+            "color": "#FF8C00"
+        },
+        {
+            "codigo": "02",
+            "nombre": "HAMBURGUESAS",
+            "color": "#8B4513"
+        },
+        {
+            "codigo": "03",
+            "nombre": "POLLOS",
+            "color": "#4B0082"
+        },
+        {
+            "codigo": "04",
+            "nombre": "SOPAS",
+            "color": "#008000"
+        },
+        {
+            "codigo": "05",
+            "nombre": "ENSALADAS",
+            "color": "#FFA07A"
+        },
+        {
+            "codigo": "06",
+            "nombre": "PROMOCIONES",
+            "color": "#1E90FF"
+        },
+        {
+            "codigo": "07",
+            "nombre": "BEBIDAS",
+            "color": "#00ffff"
+        },
+        {
+            "codigo": "08",
+            "nombre": "LICORES",
+            "color": "#0000FF"
+        },
+        {
+            "codigo": "09",
+            "nombre": "EXTRAS",
+            "color": "#FF8C00"
+        },
+        {
+            "codigo": "10",
+            "nombre": "PANADERIA",
+            "color": "#FF1493"
+        },
+        {
+            "codigo": "11",
+            "nombre": "POSTRES",
+            "color": "#6495ED"
+        },
+        {
+            "codigo": "12",
+            "nombre": "PASTAS",
+            "color": "#008080"
+        }
+    ],
+    "mesas": [
+        {
+            "id": "01",
+            "label": "M01",
+            "ocupada": true,
+            "cliente": "diego llevar"
+        },
+        {
+            "id": "02",
+            "label": "M02",
+            "ocupada": true,
+            "cliente": "gabriela mesa"
+        },
+        {
+            "id": "03",
+            "label": "M03",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "04",
+            "label": "M04",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "05",
+            "label": "M05",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "06",
+            "label": "M06",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "07",
+            "label": "M07",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "08",
+            "label": "M08",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "09",
+            "label": "M09",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "10",
+            "label": "M10",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "11",
+            "label": "M11",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "12",
+            "label": "M12",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "13",
+            "label": "M13",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "14",
+            "label": "M14",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "15",
+            "label": "M15",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "16",
+            "label": "M16",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "17",
+            "label": "M17",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "18",
+            "label": "M18",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "19",
+            "label": "M19",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "20",
+            "label": "M20",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "21",
+            "label": "M21",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "22",
+            "label": "M22",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "23",
+            "label": "M23",
+            "ocupada": false,
+            "cliente": ""
+        },
+        {
+            "id": "24",
+            "label": "M24",
+            "ocupada": false,
+            "cliente": ""
+        }
+    ]
 }

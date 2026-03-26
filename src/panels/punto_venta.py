@@ -39,6 +39,11 @@ class PuntoVentaPanel(tk.Frame):
                                   font=Theme.FONT_BOLD, relief="flat", command=self.controller.mostrar_login)
             btn_corte.pack(side="left", padx=5)
 
+        # Botón Cerrar Sesión (Siempre visible)
+        btn_logout = tk.Button(btn_frame, text="Cerrar Sesión", bg=Theme.DANGER, fg="white", 
+                               font=Theme.FONT_BOLD, relief="flat", command=self.controller.mostrar_login)
+        btn_logout.pack(side="left", padx=5)
+
         # Contenedor principal dividido en izquierda y derecha
         main_container = tk.Frame(self, bg=Theme.APP_BG)
         main_container.pack(fill="both", expand=True, padx=5, pady=5)
@@ -65,6 +70,27 @@ class PuntoVentaPanel(tk.Frame):
         tk.Label(total_frame, textvariable=self.total_str, bg="black", fg="#00FF00", font=("Segoe UI", 36, "bold")).pack(anchor="e", padx=10)
         tk.Label(total_frame, text="PVP+I.V.A.: 0,0000 $", bg="black", fg="cyan", font=Theme.FONT_SMALL).pack(anchor="e", padx=10)
         
+        # Notebook Pestañas Izquierda
+        style = ttk.Style()
+        style.configure("Left.TNotebook", background=Theme.SURFACE)
+        style.configure("Left.TNotebook.Tab", font=Theme.FONT_BOLD, padding=[10, 2])
+
+        left_notebook = ttk.Notebook(parent, style="Left.TNotebook")
+        left_notebook.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        
+        tab_operacion = tk.Frame(left_notebook, bg=Theme.SURFACE)
+        tab_transito = tk.Frame(left_notebook, bg=Theme.SURFACE)
+        tab_procesos = tk.Frame(left_notebook, bg=Theme.SURFACE)
+        
+        left_notebook.add(tab_operacion, text="F7 - Operación Actual")
+        left_notebook.add(tab_transito, text="F6 - En Tránsito")
+        left_notebook.add(tab_procesos, text="F10 - Procesos")
+        
+        self._build_tab_operacion(tab_operacion)
+        self._build_tab_transito(tab_transito)
+        self._build_tab_procesos(tab_procesos)
+
+    def _build_tab_operacion(self, parent):
         # Formulario de datos
         form_frame = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=5)
         form_frame.pack(fill="x")
@@ -72,10 +98,15 @@ class PuntoVentaPanel(tk.Frame):
         tk.Label(form_frame, text="CLIENTE: 0 USUARIO FINAL", bg=Theme.SURFACE, fg=Theme.PRIMARY, font=Theme.FONT_BOLD).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 10))
         
         tk.Label(form_frame, text="Mesa:", bg=Theme.SURFACE, font=Theme.FONT_SMALL).grid(row=1, column=0, sticky="w")
-        tk.Entry(form_frame, width=15, font=Theme.FONT_BODY).grid(row=1, column=1, sticky="w", padx=5)
+        self.entry_mesa = tk.Entry(form_frame, width=15, font=Theme.FONT_BODY)
+        self.entry_mesa.grid(row=1, column=1, sticky="w", padx=5)
+        self.entry_mesa.bind("<Return>", lambda e: self._on_procesar())
         
         tk.Label(form_frame, text="Vendedor:", bg=Theme.SURFACE, font=Theme.FONT_SMALL).grid(row=1, column=2, sticky="w")
-        tk.Entry(form_frame, width=15, font=Theme.FONT_BODY).grid(row=1, column=3, sticky="w", padx=5)
+        self.entry_vendedor = tk.Entry(form_frame, width=15, font=Theme.FONT_BODY, fg="blue")
+        self.entry_vendedor.grid(row=1, column=3, sticky="w", padx=5)
+        self.entry_vendedor.insert(0, "vendedor")
+        self.entry_vendedor.config(state="readonly")
         
         tk.Label(form_frame, text="Cód Artículo:", bg=Theme.SURFACE, font=Theme.FONT_SMALL).grid(row=2, column=0, sticky="w", pady=(10, 0))
         tk.Entry(form_frame, width=15, font=Theme.FONT_BODY).grid(row=2, column=1, sticky="w", padx=5, pady=(10, 0))
@@ -83,20 +114,20 @@ class PuntoVentaPanel(tk.Frame):
         tk.Label(form_frame, text="Cantidad:", bg=Theme.SURFACE, font=Theme.FONT_SMALL).grid(row=2, column=2, sticky="w", pady=(10, 0))
         tk.Entry(form_frame, width=15, font=Theme.FONT_BODY).grid(row=2, column=3, sticky="w", padx=5, pady=(10, 0))
         
-        tk.Button(form_frame, text="✓ Procesar", bg=Theme.ACCENT, fg="white", font=Theme.FONT_BOLD, relief="flat").grid(row=3, column=3, sticky="ew", pady=(10, 0), padx=5)
+        tk.Button(form_frame, text="✓ Procesar", bg=Theme.ACCENT, fg="white", font=Theme.FONT_BOLD, relief="flat", command=self._on_procesar).grid(row=3, column=3, sticky="ew", pady=(10, 0), padx=5)
         
         # Tabla de Detalles
         table_frame = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=10)
         table_frame.pack(fill="both", expand=True)
         
         columns = ("Nota", "Cant.", "Descripción", "Tot.Linea")
-        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=10)
         self.tree.heading("Nota", text="Nota")
         self.tree.column("Nota", width=50, anchor="center")
         self.tree.heading("Cant.", text="Cant.")
         self.tree.column("Cant.", width=50, anchor="center")
         self.tree.heading("Descripción", text="Descripción")
-        self.tree.column("Descripción", width=200, anchor="w")
+        self.tree.column("Descripción", width=180, anchor="w")
         self.tree.heading("Tot.Linea", text="Tot.Linea")
         self.tree.column("Tot.Linea", width=80, anchor="e")
         
@@ -108,10 +139,63 @@ class PuntoVentaPanel(tk.Frame):
         
         # Botones Inferiores Factura
         bottom_buttons = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=10)
-        bottom_buttons.pack(fill="x")
+        bottom_buttons.pack(fill="x", side="bottom")
         
         tk.Button(bottom_buttons, text="✓ Resumir Líneas", bg=Theme.PRIMARY, fg="white", font=Theme.FONT_BOLD, relief="flat").pack(side="left", fill="x", expand=True, padx=2)
         tk.Button(bottom_buttons, text="Saldo", bg="#DDDDDD", fg="black", font=Theme.FONT_BOLD, relief="flat").pack(side="left", fill="x", expand=True, padx=2)
+
+    def _build_tab_transito(self, parent):
+        # Tabla de Cuentas Abiertas (En Tránsito)
+        table_frame = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=10)
+        table_frame.pack(fill="both", expand=True)
+        
+        columns = ("Abrir", "Vendedor", "Cliente", "Mesa", "Monto Neto Bs.", "Status")
+        tree_transito = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
+        
+        widths = {"Abrir": 50, "Vendedor": 80, "Cliente": 120, "Mesa": 50, "Monto Neto Bs.": 100, "Status": 60}
+        for col in columns:
+            tree_transito.heading(col, text=col)
+            tree_transito.column(col, width=widths[col], anchor="center" if col != "Cliente" else "w")
+            
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree_transito.yview)
+        tree_transito.configure(yscroll=scrollbar.set)
+        
+        tree_transito.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Footer
+        footer = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=10)
+        footer.pack(fill="x", side="bottom")
+        tk.Label(footer, text="Ctas.Abiertas:", bg=Theme.SURFACE, font=Theme.FONT_BOLD).pack(side="left")
+        tk.Label(footer, text="0,00 Bs.", bg=Theme.SURFACE, font=Theme.FONT_BOLD).pack(side="right")
+
+    def _build_tab_procesos(self, parent):
+        grid_frame = tk.Frame(parent, bg=Theme.SURFACE)
+        grid_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        for i in range(2):
+            grid_frame.columnconfigure(i, weight=1, uniform="proc")
+            
+        def create_btn(row, col, text, colspan=1):
+            btn = tk.Button(grid_frame, text=text, bg="#E0E0E0", fg="black", font=Theme.FONT_BOLD, relief="flat", height=3)
+            btn.grid(row=row, column=col, columnspan=colspan, sticky="nsew", padx=5, pady=5)
+            
+        create_btn(0, 0, "Mesas")
+        create_btn(0, 1, "") # Filler or empty space (in image 4, 'Mesas' is just a big button)
+        
+        create_btn(1, 0, "Despachadores")
+        create_btn(1, 1, "Tipos de Mesas")
+        
+        create_btn(2, 0, "Reportes\nF5")
+        create_btn(2, 1, "Saldos\nF3")
+        
+        # Botón grande "Procesos" en el fondo
+        btn_proc = tk.Button(grid_frame, text="Procesos", bg="#E0E0E0", fg="black", font=Theme.FONT_BOLD, relief="flat", height=3)
+        btn_proc.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
+        
+        # Ajustar pesos de filas
+        for i in range(4):
+            grid_frame.rowconfigure(i, weight=1)
 
     def _build_right_panel(self, parent):
         # Notebook (Pestañas)
@@ -132,21 +216,9 @@ class PuntoVentaPanel(tk.Frame):
         self._build_mesas_tab(tab_mesas)
 
     def _build_grupos_tab(self, parent):
-        # Grilla de Grupos basada en la imagen de referencia
-        grupos_data = [
-            ("PIZZAS", "#FF8C00"),       # Naranja
-            ("HAMBURGUESAS", "#8B4513"), # Marrón
-            ("POLLOS", "#4B0082"),       # Morado Oscuro
-            ("SOPAS", "#008000"),        # Verde
-            ("ENSALADAS", "#FFA07A"),    # Naranja claro
-            ("ENTRADAS", "#1E90FF"),     # Azul claro
-            ("BEBIDAS", "#FF0000"),      # Rojo
-            ("LICORES", "#0000FF"),      # Azul fuerte
-            ("PROMOCIONES", "#FF8C00"),  # Naranja
-            ("PANADERIA", "#FF1493"),    # Rosa
-            ("POSTRES", "#6495ED"),      # Celeste
-            ("PASTAS", "#008080"),       # Verde azulado
-        ]
+        # Grilla de Grupos dinámica
+        grupos_del_sistema = BusinessLogic.get_grupos()
+        grupos_data = [(g.get("nombre", "DESCONOCIDO"), g.get("color", "#CCCCCC")) for g in grupos_del_sistema]
 
         # Crear un canvas y frame para permitir padding interior de grilla (opcional, uso frames)
         grid_frame = tk.Frame(parent, bg="white")
@@ -177,34 +249,105 @@ class PuntoVentaPanel(tk.Frame):
                 row += 1
 
     def _build_mesas_tab(self, parent):
-        # Grilla de Mesas basada en la imagen de referencia
-        grid_frame = tk.Frame(parent, bg="white")
-        grid_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        # Grilla de Mesas dinámica
+        self.mesas_container = tk.Frame(parent, bg="white")
+        self.mesas_container.pack(fill="both", expand=True, padx=20, pady=20)
         
-        for i in range(5):
-            grid_frame.columnconfigure(i, weight=1, uniform="mesa")
-        for i in range(5):
-            grid_frame.rowconfigure(i, weight=1, uniform="mesa")
+        self.refresh_mesas()
+        
+        # Botones de gestión de mesas (Agregar/Quitar)
+        btn_area = tk.Frame(parent, bg="white")
+        btn_area.pack(fill="x", side="bottom", pady=10)
+        
+        tk.Button(btn_area, text="[+] Agregar Mesa", bg=Theme.ACCENT, fg="white", font=Theme.FONT_BOLD, command=self._add_mesa).pack(side="left", padx=10)
+        tk.Button(btn_area, text="[-] Quitar Mesa", bg=Theme.DANGER, fg="white", font=Theme.FONT_BOLD, command=self._remove_mesa).pack(side="left", padx=10)
+
+    def refresh_mesas(self):
+        for widget in self.mesas_container.winfo_children():
+            widget.destroy()
             
-        mesa_num = 1
-        for row in range(5):
-            for col in range(5):
-                # Simular que la Mesa 1 está ocupada (azul) y las demás libres (blanco)
-                bg_color = Theme.PRIMARY if mesa_num == 6 else "white" # Usamos mesa 6 como la ocupada (referencia image 2, col 0 row 1)
-                text = f"M0{mesa_num}" if mesa_num == 6 else ""
-                fg_color = "white"
-                
-                btn = tk.Button(grid_frame, text=text, bg=bg_color, fg=fg_color, font=Theme.FONT_BOLD, 
-                                relief="solid", bd=1, highlightbackground=Theme.PRIMARY)
-                
-                # Bottom band on the table buttons (indicates availability or simple design element)
-                btn_container = tk.Frame(grid_frame, bg="white", highlightthickness=1, highlightbackground="#DDDDDD")
-                btn_container.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
-                btn_container.pack_propagate(False)
-                
-                inner_btn = tk.Button(btn_container, text=text, bg=bg_color, fg=fg_color, font=Theme.FONT_BOLD, relief="flat")
-                inner_btn.pack(fill="both", expand=True)
-                
-                tk.Frame(btn_container, bg=Theme.PRIMARY, height=10).pack(side="bottom", fill="x") # Barra inferior azul clásica de Premium Soft
-                
-                mesa_num += 1
+        mesas = BusinessLogic.get_mesas()
+        
+        # Grid dinámico (5 columnas)
+        cols = 5
+        for i, mesa in enumerate(mesas):
+            row, col = divmod(i, cols)
+            self.mesas_container.columnconfigure(col, weight=1, uniform="mesa")
+            self.mesas_container.rowconfigure(row, weight=1, uniform="mesa")
+            
+            bg_color = Theme.PRIMARY if mesa["ocupada"] else "white"
+            text = f"{mesa['label']}\n{mesa['cliente']}" if mesa["ocupada"] else mesa["label"]
+            fg_color = "white" if mesa["ocupada"] else "black"
+            
+            btn_card = tk.Frame(self.mesas_container, bg="white", highlightthickness=1, highlightbackground="#DDDDDD")
+            btn_card.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
+            btn_card.pack_propagate(False)
+            
+            btn = tk.Button(btn_card, text=text, bg=bg_color, fg=fg_color, font=("Segoe UI", 9, "bold"), relief="flat")
+            btn.pack(fill="both", expand=True)
+            
+            # Click en mesa para liberar o ver info
+            btn.bind("<Button-1>", lambda e, m=mesa: self._interact_mesa(m))
+            
+            tk.Frame(btn_card, bg=Theme.PRIMARY, height=10).pack(side="bottom", fill="x")
+
+    def _interact_mesa(self, mesa):
+        from tkinter import messagebox, simpledialog
+        if mesa["ocupada"]:
+            if messagebox.askyesno("Mesa Ocupada", f"¿Desea liberar la {mesa['label']} ({mesa['cliente']})?"):
+                mesas = BusinessLogic.get_mesas()
+                for m in mesas:
+                    if m["id"] == mesa["id"]:
+                        m["ocupada"] = False
+                        m["cliente"] = ""
+                BusinessLogic.set_mesas(mesas)
+                self.refresh_mesas()
+        else:
+            # Opción de renombrar la mesa
+            new_label = simpledialog.askstring("Renombrar Mesa", f"Ingrese nuevo nombre para {mesa['label']}:", initialvalue=mesa['label'])
+            if new_label:
+                mesas = BusinessLogic.get_mesas()
+                for m in mesas:
+                    if m["id"] == mesa["id"]:
+                        m["label"] = new_label.upper()
+                BusinessLogic.set_mesas(mesas)
+                self.refresh_mesas()
+
+    def _add_mesa(self):
+        mesas = BusinessLogic.get_mesas()
+        new_id = f"{len(mesas) + 1:02d}"
+        mesas.append({"id": new_id, "label": f"M{new_id}", "ocupada": False, "cliente": ""})
+        BusinessLogic.set_mesas(mesas)
+        self.refresh_mesas()
+
+    def _remove_mesa(self):
+        mesas = BusinessLogic.get_mesas()
+        if mesas:
+            mesas.pop()
+            BusinessLogic.set_mesas(mesas)
+            self.refresh_mesas()
+
+    def _on_procesar(self):
+        nombre_cliente = self.entry_mesa.get().strip()
+        if not nombre_cliente:
+            return
+            
+        mesas = BusinessLogic.get_mesas()
+        # Buscar primera mesa libre
+        mesa_libre = None
+        for m in mesas:
+            if not m["ocupada"]:
+                mesa_libre = m
+                break
+        
+        if mesa_libre:
+            mesa_libre["ocupada"] = True
+            mesa_libre["cliente"] = nombre_cliente
+            BusinessLogic.set_mesas(mesas)
+            from tkinter import messagebox
+            messagebox.showinfo("Mesa Asignada", f"Se asignó el cliente '{nombre_cliente}' a la {mesa_libre['label']}")
+            self.entry_mesa.delete(0, tk.END)
+            self.refresh_mesas()
+        else:
+            from tkinter import messagebox
+            messagebox.showwarning("Sin Mesas", "No hay mesas desocupadas disponibles.")
