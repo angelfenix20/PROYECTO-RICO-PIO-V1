@@ -70,3 +70,13 @@ class UIHelpers:
         if width: btn.configure(width=width)
         UIHelpers.apply_hover(btn, Theme.PRIMARY, Theme.PRIMARY_HOVER)
         return btn
+    @staticmethod
+    def center_window(root, width, height):
+        """Centra la ventana en la pantalla con las dimensiones dadas."""
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        
+        root.geometry(f"{width}x{height}+{x}+{y}")

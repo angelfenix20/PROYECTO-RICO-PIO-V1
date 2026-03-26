@@ -83,7 +83,7 @@ class AdminPanel(tk.Frame):
         tk.Label(status_f, text="● Online", font=Theme.FONT_SMALL, fg=Theme.ACCENT, bg=Theme.SURFACE).pack(side="left")
 
         # Contenido Central (Grid de Acciones)
-        content = tk.Frame(main_area, bg=Theme.APP_BG, padx=40, pady=40)
+        content = tk.Frame(main_area, bg=Theme.APP_BG, padx=20, pady=40)
         content.pack(fill="both", expand=True)
 
         grid_f = tk.Frame(content, bg=Theme.APP_BG)
@@ -94,9 +94,9 @@ class AdminPanel(tk.Frame):
         self.create_action_card(grid_f, "Inventario", "Stock y Almacén", "📦", 0, 2)
 
     def create_action_card(self, parent, title, desc, icon, row, col):
-        card = tk.Frame(parent, bg=Theme.SURFACE, width=220, height=180, relief="flat", 
+        card = tk.Frame(parent, bg=Theme.SURFACE, width=190, height=170, relief="flat", 
                         highlightthickness=1, highlightbackground=Theme.BORDER)
-        card.grid(row=row, column=col, padx=15, pady=15)
+        card.grid(row=row, column=col, padx=10, pady=15)
         card.pack_propagate(False)
 
         tk.Label(card, text=icon, font=("Segoe UI", 40), bg=Theme.SURFACE).pack(pady=(20, 10))

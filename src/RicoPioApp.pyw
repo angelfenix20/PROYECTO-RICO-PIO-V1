@@ -6,7 +6,7 @@ Refactorización: Estructura Modular y Separación de Lógica
 
 import tkinter as tk
 from theme import Theme
-from ui_helpers import _fix_tcl_tk
+from ui_helpers import _fix_tcl_tk, UIHelpers
 
 # Importar Paneles
 from panels.login import LoginPanel
@@ -36,7 +36,10 @@ class RicoPioApp:
             frame.destroy()
             self.current_frame = None
             
-        self.root.geometry(geometry)
+        # Extraer ancho y alto de la geometría (formato "anchoxalto")
+        width, height = map(int, geometry.split("x"))
+        UIHelpers.center_window(self.root, width, height)
+
         new_frame = frame_class(self.container, self, **kwargs)
         self.current_frame = new_frame
         new_frame.pack(fill="both", expand=True)
