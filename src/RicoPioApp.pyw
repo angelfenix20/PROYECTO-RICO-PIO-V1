@@ -1,6 +1,5 @@
 """
 Proyecto: Sistema de Facturación "Rico Pío"
-Autor: Jose Angel Garcia Arao (4to Semestre)
 Asesoría: Ing. Gabriela
 Refactorización: Estructura Modular y Separación de Lógica
 """
