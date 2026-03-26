@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from theme import Theme
 from ui_helpers import UIHelpers
+from logic import BusinessLogic
 
 class PuntoVentaPanel(tk.Frame):
     def __init__(self, parent, controller):
@@ -10,6 +11,7 @@ class PuntoVentaPanel(tk.Frame):
         
         # Variables de control
         self.total_str = tk.StringVar(value="0,00")
+        self.tasa_str = tk.StringVar(value=f"({BusinessLogic.get_tasa_usd():.2f})")
         
         self._build_ui()
 
@@ -25,7 +27,8 @@ class PuntoVentaPanel(tk.Frame):
         btn_frame = tk.Frame(header, bg=Theme.PRIMARY)
         btn_frame.pack(side="right", padx=10)
         
-        tk.Label(btn_frame, text="Tasa Actual USD$ (46,66)", font=Theme.FONT_SMALL, bg=Theme.PRIMARY, fg="white").pack(side="left", padx=15)
+        tk.Label(btn_frame, text="Tasa Actual USD$", font=Theme.FONT_SMALL, bg=Theme.PRIMARY, fg="white").pack(side="left", padx=(15, 0))
+        tk.Label(btn_frame, textvariable=self.tasa_str, font=Theme.FONT_SMALL, bg=Theme.PRIMARY, fg="white").pack(side="left", padx=(5, 15))
         
         if self.controller.current_frame.__class__.__name__ == "AdminPanel":
             btn_volver = tk.Button(btn_frame, text="Volver al Panel Admin", bg=Theme.DANGER, fg="white", 
