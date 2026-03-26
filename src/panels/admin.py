@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 from theme import Theme
+from ui_helpers import UIHelpers
 
-# Importar diálogos desde el nuevo paquete
+# Importar diálogos
 from dialogs.tasa_cambio import TasaCambioDialog
 from dialogs.monedas import DefinirMonedasDialog
 from dialogs.grupos_inventario import GruposInventarioDialog
@@ -10,106 +11,98 @@ from dialogs.articulos_inventario import ArticulosInventarioDialog
 
 class AdminPanel(tk.Frame):
     def __init__(self, parent, controller):
-        super().__init__(parent, bg=Theme.BG_WHITE)
+        super().__init__(parent, bg=Theme.APP_BG)
         self.controller = controller
         self._build_ui()
 
     def _build_ui(self):
-        header = tk.Frame(self, bg=Theme.BG_WHITE, height=50)
+        # Sidebar (Oscuro)
+        sidebar = tk.Frame(self, bg=Theme.SIDEBAR_BG, width=240)
+        sidebar.pack(side="left", fill="y")
+        sidebar.pack_propagate(False)
+
+        # Logo/Marca en Sidebar
+        brand_frame = tk.Frame(sidebar, bg=Theme.SIDEBAR_BG, pady=30)
+        brand_frame.pack(fill="x")
+        tk.Label(brand_frame, text="Rico Pío", fg=Theme.ACCENT, bg=Theme.SIDEBAR_BG, font=("Segoe UI", 18, "bold")).pack()
+        tk.Label(brand_frame, text="ADMINISTRATIVO", fg=Theme.TEXT_LIGHT, bg=Theme.SIDEBAR_BG, font=("Segoe UI", 8)).pack()
+
+        # Buscador en Sidebar
+        search_f = tk.Frame(sidebar, bg=Theme.SIDEBAR_BG, padx=15, pady=10)
+        search_f.pack(fill="x")
+        search_e = tk.Entry(search_f, bg=Theme.DARK_PANEL, fg="white", relief="flat", insertbackground="white")
+        search_e.pack(fill="x", ipady=4)
+        search_e.insert(0, " Buscar función...")
+
+        # Menú de Navegación (Treeview estilizado)
+        tree_style = ttk.Style()
+        tree_style.configure("Custom.Treeview", background=Theme.SIDEBAR_BG, foreground="white", 
+                             fieldbackground=Theme.SIDEBAR_BG, borderwidth=0, font=Theme.FONT_BODY)
+        
+        tree = ttk.Treeview(sidebar, show="tree", style="Custom.Treeview")
+        tree.pack(fill="both", expand=True, padx=5)
+        
+        fav_id = tree.insert("", "end", text=" ARCHIVOS", open=True)
+        tree.insert(fav_id, "end", text=" Definir Monedas")
+        tree.insert(fav_id, "end", text=" Grupos de Inventario")
+        tree.insert(fav_id, "end", text=" Artículos de Inventario")
+        
+        proc_id = tree.insert("", "end", text=" PROCESOS", open=True)
+        tree.insert(proc_id, "end", text=" Tasa de Cambio")
+
+        def on_tree_click(event):
+            item = tree.identify_row(event.y)
+            if not item: return
+            texto = tree.item(item, "text").strip()
+            if texto == "Tasa de Cambio": TasaCambioDialog(self.controller.root)
+            elif texto == "Definir Monedas": DefinirMonedasDialog(self.controller.root)
+            elif texto == "Grupos de Inventario": GruposInventarioDialog(self.controller.root)
+            elif texto == "Artículos de Inventario": ArticulosInventarioDialog(self.controller.root)
+        
+        tree.bind("<Double-1>", on_tree_click)
+
+        # Botón Salir en Sidebar
+        btn_exit = tk.Button(sidebar, text="Cerrar Sesión", bg=Theme.DANGER, fg="white", 
+                             font=Theme.FONT_BOLD, relief="flat", command=self.controller.mostrar_login)
+        btn_exit.pack(fill="x", side="bottom", padx=20, pady=20)
+
+        # Área Principal
+        main_area = tk.Frame(self, bg=Theme.APP_BG)
+        main_area.pack(side="left", fill="both", expand=True)
+
+        # Header Superior
+        header = tk.Frame(main_area, bg=Theme.SURFACE, height=60, bd=0, highlightthickness=1, highlightbackground=Theme.BORDER)
         header.pack(fill="x")
+        header.pack_propagate(False)
+
+        tk.Label(header, text="Panel General de Operaciones", font=Theme.FONT_H2, bg=Theme.SURFACE, fg=Theme.TEXT_PRIMARY).pack(side="left", padx=20)
         
-        logo_lbl = tk.Label(header, text="☁ Software", font=("Arial", 16, "bold", "italic"), fg=Theme.ACCENT_BLUE, bg=Theme.BG_WHITE)
-        logo_lbl.pack(side="left", padx=10, pady=10)
+        status_f = tk.Frame(header, bg=Theme.SURFACE)
+        status_f.pack(side="right", padx=20)
+        tk.Label(status_f, text="Estación: 001", font=Theme.FONT_SMALL, bg=Theme.SURFACE, fg=Theme.TEXT_SECONDARY).pack(side="left", padx=10)
+        tk.Label(status_f, text="● Online", font=Theme.FONT_SMALL, fg=Theme.ACCENT, bg=Theme.SURFACE).pack(side="left")
+
+        # Contenido Central (Grid de Acciones)
+        content = tk.Frame(main_area, bg=Theme.APP_BG, padx=40, pady=40)
+        content.pack(fill="both", expand=True)
+
+        grid_f = tk.Frame(content, bg=Theme.APP_BG)
+        grid_f.pack()
+
+        self.create_action_card(grid_f, "Punto de Venta", "Ventas rápidas y mesas", "💳", 0, 0)
+        self.create_action_card(grid_f, "Touch Screen", "Interfaz p/ Restaurante", "🍽️", 0, 1)
+        self.create_action_card(grid_f, "Inventario", "Stock y Almacén", "📦", 0, 2)
+
+    def create_action_card(self, parent, title, desc, icon, row, col):
+        card = tk.Frame(parent, bg=Theme.SURFACE, width=220, height=180, relief="flat", 
+                        highlightthickness=1, highlightbackground=Theme.BORDER)
+        card.grid(row=row, column=col, padx=15, pady=15)
+        card.pack_propagate(False)
+
+        tk.Label(card, text=icon, font=("Segoe UI", 40), bg=Theme.SURFACE).pack(pady=(20, 10))
+        tk.Label(card, text=title, font=Theme.FONT_BOLD, bg=Theme.SURFACE, fg=Theme.TEXT_PRIMARY).pack()
+        tk.Label(card, text=desc, font=Theme.FONT_SMALL, bg=Theme.SURFACE, fg=Theme.TEXT_SECONDARY).pack(pady=5)
         
-        version_lbl = tk.Label(header, text="Administrativo 9.1\nRevisión: 2026", font=Theme.FONT_NORMAL, bg=Theme.BG_WHITE, justify="right")
-        version_lbl.pack(side="right", padx=10)
-        tk.Label(header, text="Versión Modular", font=("Arial", 10, "bold"), fg="#c0392b", bg=Theme.BG_WHITE).pack(side="right", padx=5)
-
-        body = tk.Frame(self, bg=Theme.BG_WHITE)
-        body.pack(fill="both", expand=True)
-
-        left_panel = tk.Frame(body, width=200, bg="#f5f5f5", relief="sunken", bd=1)
-        left_panel.pack(side="left", fill="y")
-        left_panel.pack_propagate(False)
-
-        search_frame = tk.Frame(left_panel, bg=Theme.MODAL_HEADER_BG)
-        search_frame.pack(fill="x")
-        tk.Label(search_frame, text="Buscar:", fg="white", bg=Theme.MODAL_HEADER_BG, font=Theme.FONT_BOLD).pack(side="left", padx=5)
-        search_entry = tk.Entry(search_frame, width=15)
-        search_entry.pack(side="left", padx=5, pady=2)
-        tk.Button(search_frame, text="X", bg=Theme.ACCENT_RED, fg="white", bd=0, font=("Arial", 8, "bold")).pack(side="right", padx=2, pady=2)
-        
-        menu_container = tk.Frame(left_panel, bg=Theme.BG_WHITE)
-        menu_container.pack(fill="both", expand=True)
-
-        tabs_frame = tk.Frame(menu_container, bg=Theme.BG_DEFAULT)
-        tabs_frame.pack(side="left", fill="y")
-        for tab in ["Administración"]:
-            vtext = "\n".join(list(tab))
-            tk.Button(tabs_frame, text=vtext, width=2, font=("Arial", 7), bg="#f5f5f5", relief="groove").pack(pady=2)
-
-        tree = ttk.Treeview(menu_container, show="tree")
-        tree.pack(side="left", fill="both", expand=True)
-        fav_id = tree.insert("", "end", text="Favoritos", open=True)
-        
-        archivos_id = tree.insert(fav_id, "end", text="Archivos", open=True)
-        tree.insert(archivos_id, "end", text="Definir Monedas")
-        tree.insert(archivos_id, "end", text="Grupos de Inventario")
-        tree.insert(archivos_id, "end", text="Artículos de Inventario")
-        
-        procesos_id = tree.insert(fav_id, "end", text="Procesos", open=True)
-        tree.insert(procesos_id, "end", text="Tasa de Cambio")
-        
-        tree.insert(fav_id, "end", text="Informes")
-
-        def on_tree_double_click(event):
-            selected = tree.selection()
-            if not selected:
-                return
-            texto = tree.item(selected[0], "text")
-            if texto == "Tasa de Cambio":
-                TasaCambioDialog(self.controller.root)
-            elif texto == "Definir Monedas":
-                DefinirMonedasDialog(self.controller.root)
-            elif texto == "Grupos de Inventario":
-                GruposInventarioDialog(self.controller.root)
-            elif texto == "Artículos de Inventario":
-                ArticulosInventarioDialog(self.controller.root)
-                
-        tree.bind("<Double-1>", on_tree_double_click)
-
-        support_lbl = tk.Label(left_panel, text="COMUNIDAD\nDE SOPORTE", font=("Arial", 10, "bold"), fg=Theme.SUCCESS_GREEN, bg=Theme.BG_WHITE, relief="ridge", bd=2)
-        support_lbl.pack(side="bottom", fill="x", pady=2)
-
-        right_panel = tk.Frame(body, width=50, bg=Theme.DARK_PANEL)
-        right_panel.pack(side="right", fill="y")
-
-        center_panel = tk.Frame(body, bg=Theme.BG_WHITE)
-        center_panel.pack(side="left", fill="both", expand=True, padx=20, pady=20)
-
-        top_btns = tk.Frame(center_panel, bg=Theme.BG_WHITE)
-        top_btns.pack(fill="x")
-
-        self.create_big_btn(top_btns, "Punto de Venta", "PUNTO DE VENTA", "💳", "F2")
-        self.create_big_btn(top_btns, "Touch Screen", "RESTAURANTES", "🍽️", "F3")
-        self.create_big_btn(top_btns, "Consulta Precios", "PRECIOS", "🏷️", "F4")
-
-        bottom_bar = tk.Frame(self, bg=Theme.BG_DEFAULT, height=30, bd=1, relief="raised")
-        bottom_bar.pack(fill="x", side="bottom")
-
-        status_text = "ADMIN-001  Módulo: Administrativo  Usuario: ADMINISTRACION"
-        tk.Label(bottom_bar, text=status_text, bg=Theme.BG_DEFAULT, font=Theme.FONT_SMALL).pack(side="left", padx=5)
-
-        sys_btns = tk.Frame(bottom_bar, bg=Theme.BG_DEFAULT)
-        sys_btns.pack(side="right")
-        tk.Button(sys_btns, text="Cambiar de Usuario (f6)", bg="#bdc3c7", font=Theme.FONT_SMALL, command=self.controller.mostrar_login).pack(side="left", padx=1)
-        tk.Button(sys_btns, text="Salir (Esc)", bg="#c0392b", fg="white", font=("Arial", 8, "bold"), command=self.controller.root.destroy).pack(side="left", padx=1)
-
-    def create_big_btn(self, parent, top_text, subtitle, icon, keybind):
-        f = tk.Frame(parent, bg=Theme.BG_WHITE, relief="groove", bd=1)
-        f.pack(side="left", padx=10)
-        tk.Label(f, text=f"{top_text} ({keybind})", font=Theme.FONT_NORMAL, fg="#7f8c8d", bg=Theme.BG_WHITE).pack(anchor="w", padx=5)
-        center_f = tk.Frame(f, bg=Theme.BG_WHITE)
-        center_f.pack(pady=10, padx=20)
-        tk.Label(center_f, text=icon, font=("Arial", 35), bg=Theme.BG_WHITE).pack()
-        tk.Label(center_f, text=subtitle, font=("Arial", 10, "bold"), fg=Theme.ACCENT_BLUE, bg=Theme.BG_WHITE).pack()
+        # Simular hover en la card
+        card.bind("<Enter>", lambda e: card.configure(highlightbackground=Theme.PRIMARY))
+        card.bind("<Leave>", lambda e: card.configure(highlightbackground=Theme.BORDER))

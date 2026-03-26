@@ -6,57 +6,60 @@ class TasaCambioDialog(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Tasa de cambio")
-        self.geometry("480x350")
-        self.configure(bg=Theme.BG_WHITE)
+        self.geometry("480x400")
+        self.configure(bg=Theme.SURFACE)
         self.resizable(False, False)
         self.transient(parent)
         self.grab_set()
         self._build_ui()
     
     def _build_ui(self):
-        UIHelpers.create_header(self, "Tasa de cambio", height=40)
+        UIHelpers.create_header(self, "Tasa de cambio")
         
-        body = tk.Frame(self, bg=Theme.BG_WHITE)
-        body.pack(fill="both", expand=True, padx=20, pady=10)
+        body = tk.Frame(self, bg=Theme.SURFACE, padx=30, pady=25)
+        body.pack(fill="both", expand=True)
         
-        left_frame = tk.Frame(body, bg=Theme.BG_WHITE)
-        left_frame.pack(side="left", fill="y", padx=(10, 20))
-        tk.Label(left_frame, text="$", font=("Arial", 36, "bold"), fg="#2c3e50", bg=Theme.BG_WHITE).pack(pady=20)
+        # Icono y Título
+        top_f = tk.Frame(body, bg=Theme.SURFACE)
+        top_f.pack(fill="x", pady=(0, 20))
+        tk.Label(top_f, text="USD", font=("Segoe UI", 32, "bold"), fg=Theme.PRIMARY, bg=Theme.SURFACE).pack(side="left")
         
-        right_frame = tk.Frame(body, bg=Theme.BG_WHITE)
-        right_frame.pack(side="left", fill="both", expand=True)
-        tk.Label(right_frame, text="Tasa de cambio actual", font=("Arial", 11, "bold"), bg=Theme.BG_WHITE, fg="#333333").pack(anchor="e")
+        info_f = tk.Frame(top_f, bg=Theme.SURFACE)
+        info_f.pack(side="right")
+        tk.Label(info_f, text="Tasa de cambio actual", font=Theme.FONT_SMALL, fg=Theme.TEXT_SECONDARY, bg=Theme.SURFACE).pack(anchor="e")
         
         vcmd = (self.register(self.solo_numeros), '%P')
-
-        entry_frame = tk.Frame(right_frame, bg=Theme.BG_WHITE, bd=1, relief="ridge")
-        entry_frame.pack(anchor="e", pady=(2, 10))
-        tk.Label(entry_frame, text="🔍", bg=Theme.BG_WHITE, font=("Arial", 10)).pack(side="left", padx=2)
-        tk.Label(entry_frame, text="Bs ", bg=Theme.BG_WHITE, font=("Arial", 12)).pack(side="left", padx=2)
-        
-        entry_tasa = tk.Entry(entry_frame, font=("Arial", 12), width=14, justify="right", bd=0, validate="key", validatecommand=vcmd)
-        entry_tasa.pack(side="left", padx=2, pady=2)
+        entry_tasa = tk.Entry(info_f, font=("Segoe UI", 16, "bold"), width=10, justify="right", 
+                               relief="flat", highlightthickness=1, highlightbackground=Theme.BORDER, 
+                               highlightcolor=Theme.PRIMARY, validate="key", validatecommand=vcmd)
+        entry_tasa.pack(pady=5, ipady=3)
         entry_tasa.insert(0, "500")
+
+        tk.Frame(body, bg=Theme.BORDER, height=1).pack(fill="x", pady=20)
         
-        tk.Frame(right_frame, bg="#bdc3c7", height=1).pack(fill="x", pady=5)
+        # Detalles de Moneda
+        details = tk.Frame(body, bg=Theme.SURFACE)
+        details.pack(fill="x")
         
-        tk.Label(right_frame, text="Moneda extranjera", font=Theme.FONT_NORMAL, fg=Theme.ACCENT_BLUE, bg=Theme.BG_WHITE).pack()
-        tk.Label(right_frame, text="DOLAR", font=("Arial", 11, "bold"), fg="#333333", bg=Theme.BG_WHITE).pack()
+        for lbl, val in [("Moneda extranjera:", "DÓLAR ESTADOUNIDENSE"), ("Símbolo:", "$")]:
+            row = tk.Frame(details, bg=Theme.SURFACE)
+            row.pack(fill="x", pady=5)
+            tk.Label(row, text=lbl, font=Theme.FONT_SMALL, fg=Theme.TEXT_SECONDARY, bg=Theme.SURFACE).pack(side="left")
+            tk.Label(row, text=val, font=Theme.FONT_BOLD, fg=Theme.TEXT_PRIMARY, bg=Theme.SURFACE).pack(side="right")
         
-        tk.Label(right_frame, text="Símbolo", font=Theme.FONT_NORMAL, fg=Theme.ACCENT_BLUE, bg=Theme.BG_WHITE).pack(pady=(5, 0))
-        tk.Label(right_frame, text="$", font=("Arial", 12, "bold"), fg="#333333", bg=Theme.BG_WHITE).pack()
+        desc = "Este proceso actualizará los precios según el factor de cambio configurado."
+        tk.Label(body, text=desc, font=Theme.FONT_SMALL, fg=Theme.TEXT_SECONDARY, bg=Theme.SURFACE, wraplength=400, justify="center").pack(side="bottom", pady=20)
         
-        info_text = "Este proceso se aplicará sobre los artículos importados y sobre los nacionales que posee factor de cambio"
-        tk.Label(body, text=info_text, bg=Theme.BG_WHITE, fg="#555555", font=Theme.FONT_NORMAL, justify="center").pack(side="bottom", pady=10)
+        # Botonera
+        btn_f = tk.Frame(self, bg=Theme.APP_BG, pady=15, padx=30)
+        btn_f.pack(fill="x", side="bottom")
         
-        btn_wrapper = tk.Frame(self, bg=Theme.BG_WHITE)
-        btn_wrapper.pack(side="bottom", fill="x", pady=(0, 15))
+        UIHelpers.btn_primary(btn_f, "✓ Procesar Tasa", command=self.destroy).pack(side="right", padx=5)
         
-        btn_frame = tk.Frame(btn_wrapper, bg=Theme.BG_WHITE)
-        btn_frame.pack(side="right", padx=15)
-        
-        tk.Button(btn_frame, text="✓ Procesar", font=Theme.FONT_BOLD, bg="#f5f5f5", fg="#7f8c8d", bd=1, relief="solid").pack(side="left", padx=5)
-        tk.Button(btn_frame, text="⮐ Salir", font=Theme.FONT_BOLD, bg=Theme.ACCENT_RED, fg="white", bd=0, command=self.destroy, padx=10, pady=2).pack(side="left", padx=5)
+        btn_exit = tk.Button(btn_f, text="Cancelar", font=Theme.FONT_BOLD, bg="white", fg=Theme.TEXT_SECONDARY, 
+                             relief="flat", bd=0, command=self.destroy, cursor="hand2")
+        btn_exit.pack(side="right", padx=5)
+        UIHelpers.apply_hover(btn_exit, "white", Theme.BORDER)
 
     def solo_numeros(self, nuevo_texto):
-        return nuevo_texto == "" or nuevo_texto.isdigit()
+        return nuevo_texto == "" or nuevo_texto.isdigit() or "." in nuevo_texto

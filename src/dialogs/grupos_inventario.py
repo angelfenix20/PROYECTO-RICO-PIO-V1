@@ -7,92 +7,77 @@ class GruposInventarioDialog(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Grupos de inventario")
-        self.geometry("760x560")
-        self.configure(bg=Theme.BG_WHITE)
-        self.resizable(False, False)
+        self.geometry("850x650")
+        self.configure(bg=Theme.SURFACE)
+        self.resizable(True, True)
         self.transient(parent)
         self.grab_set()
         self._build_ui()
 
     def _build_ui(self):
-        UIHelpers.create_header(self, "Grupos de inventario")
-        body = tk.Frame(self, bg=Theme.BG_WHITE)
-        body.pack(fill="both", expand=True, padx=10, pady=8)
+        UIHelpers.create_header(self, "Gestión de Grupos de Inventario")
+        
+        # Contenedor con Scroll (opcional, por ahora flexible)
+        container = tk.Frame(self, bg=Theme.SURFACE, padx=25, pady=20)
+        container.pack(fill="both", expand=True)
 
-        left = tk.Frame(body, bg=Theme.BG_WHITE)
-        left.pack(side="left", fill="both", expand=True)
+        # Dividir en Izquierda (Datos) y Derecha (Utilidad/Imagen)
+        left = tk.Frame(container, bg=Theme.SURFACE)
+        left.pack(side="left", fill="both", expand=True, padx=(0, 20))
 
-        self._build_row(left, "Código:", 6, show_search=True)
-        self._build_row(left, "Nombre:", 38)
-        self._build_row(left, "Corto:", 22)
+        # Sección de Identificación
+        id_f = tk.LabelFrame(left, text=" Identificación ", font=Theme.FONT_BOLD, bg=Theme.SURFACE, padx=15, pady=10)
+        id_f.pack(fill="x", pady=(0, 15))
+        
+        self._field(id_f, "Código del Grupo:", width=10, row=0)
+        self._field(id_f, "Nombre Completo:", width=40, row=1)
+        self._field(id_f, "Nombre Corto:", width=20, row=2)
 
-        cc_frame = tk.LabelFrame(left, text=" Códigos Contables: ", bg=Theme.BG_WHITE, font=Theme.FONT_NORMAL, padx=8, pady=6)
-        cc_frame.pack(fill="x", pady=6)
-        for lbl_text in ["Cta. de Inventario:", "Cta. de Costos:", "Cta. de Ingresos:", "Cta. de Devolución:", "Devol. Compras:"]:
-            row = tk.Frame(cc_frame, bg=Theme.BG_WHITE)
+        # Sección Contable
+        cc_f = tk.LabelFrame(left, text=" Configuración Contable ", font=Theme.FONT_BOLD, bg=Theme.SURFACE, padx=15, pady=10)
+        cc_f.pack(fill="x")
+        
+        ctas = ["Cta. Inventario", "Cta. Costos", "Cta. Ingresos", "Cta. Devoluciones"]
+        for i, cta in enumerate(ctas):
+            row = tk.Frame(cc_f, bg=Theme.SURFACE)
             row.pack(fill="x", pady=2)
-            tk.Label(row, text=lbl_text, bg=Theme.BG_WHITE, font=Theme.FONT_NORMAL, width=18, anchor="e").pack(side="left")
-            tk.Entry(row, width=22, bg=Theme.ENTRY_HIGHLIGHT, relief="solid", bd=1).pack(side="left", padx=2)
-            tk.Button(row, text="...", width=2, font=Theme.FONT_SMALL, relief="solid", bd=1).pack(side="left", padx=1)
+            tk.Label(row, text=f"{cta}:", font=Theme.FONT_SMALL, bg=Theme.SURFACE, width=15, anchor="w").pack(side="left")
+            e = tk.Entry(row, relief="flat", highlightthickness=1, highlightbackground=Theme.BORDER, bg=Theme.ENTRY_HIGHLIGHT)
+            e.pack(side="left", fill="x", expand=True, padx=5, ipady=2)
+            tk.Button(row, text="...", font=Theme.FONT_SMALL, bg=Theme.BORDER, relief="flat").pack(side="left")
 
-        tk.Checkbutton(left, text="No mostrar este Grupo en Pto.Venta Touch Screen", bg=Theme.BG_WHITE, font=Theme.FONT_NORMAL).pack(anchor="w", pady=2)
-        tk.Checkbutton(left, text="Son Licores", bg=Theme.BG_WHITE, font=Theme.FONT_NORMAL).pack(anchor="w", pady=2)
+        # Derecha (Imagen y Utilidad)
+        right = tk.Frame(container, bg=Theme.SURFACE, width=220)
+        right.pack(side="right", fill="y")
 
-        seg_row = tk.Frame(left, bg=Theme.BG_WHITE)
-        seg_row.pack(fill="x", pady=2)
-        tk.Label(seg_row, text="Tipo de seguridad:", bg=Theme.BG_WHITE, font=Theme.FONT_NORMAL).pack(side="left")
-        ttk.Combobox(seg_row, values=["Seguridad Estricta", "Normal", "Sin Seguridad"], width=18).pack(side="left", padx=4)
-
-        fmt_row = tk.Frame(left, bg=Theme.BG_WHITE)
-        fmt_row.pack(fill="x", pady=2)
-        tk.Label(fmt_row, text="Formato de Impresión para comanda:", bg=Theme.BG_WHITE, font=Theme.FONT_NORMAL).pack(anchor="w")
-        ttk.Combobox(fmt_row, values=[], width=36).pack(anchor="w", pady=2)
-
-        cid_row = tk.Frame(left, bg=Theme.BG_WHITE)
-        cid_row.pack(fill="x", pady=4)
-        tk.Label(cid_row, text="Color ID", bg=Theme.BG_WHITE, font=Theme.FONT_NORMAL).pack(side="left")
-        tk.Entry(cid_row, width=6, relief="solid", bd=1).pack(side="left", padx=4)
-
-        mid = tk.Frame(body, bg=Theme.BG_WHITE, width=180)
-        mid.pack(side="left", fill="y", padx=10)
-        mid.pack_propagate(False)
-
-        tk.Label(mid, text="Imagen asociada", bg=Theme.BG_WHITE, font=Theme.FONT_BOLD).pack(pady=(0,4))
-        img_box = tk.Frame(mid, width=130, height=110, bg="#f0f0f0", relief="sunken", bd=1)
+        # Imagen
+        tk.Label(right, text="Imagen del Grupo", font=Theme.FONT_BOLD, bg=Theme.SURFACE).pack(pady=(0, 5))
+        img_box = tk.Frame(right, width=180, height=140, bg=Theme.APP_BG, highlightthickness=1, highlightbackground=Theme.BORDER)
         img_box.pack()
         img_box.pack_propagate(False)
-        tk.Label(img_box, text="SIN IMAGEN", bg="#f0f0f0", fg="#aaaaaa", font=Theme.FONT_NORMAL).place(relx=0.5, rely=0.5, anchor="center")
+        tk.Label(img_box, text="📸\nSin Imagen", font=Theme.FONT_SMALL, bg=Theme.APP_BG, fg=Theme.TEXT_SECONDARY).place(relx=0.5, rely=0.5, anchor="center")
+        
+        tk.Button(right, text="Subir Imagen", font=Theme.FONT_SMALL, bg="white", relief="flat", padx=10).pack(pady=10)
 
-        tk.Button(mid, text="Asociar imagen", font=Theme.FONT_NORMAL, relief="solid", bd=1, padx=6, pady=4).pack(pady=8)
-        tk.Button(mid, text="Indicar Sub. Grupos", font=Theme.FONT_BOLD, bg="#c8c8c8", relief="raised", padx=6, pady=4).pack(pady=4)
+        # Checks
+        tk.Checkbutton(left, text="Mostrar en Punto de Venta (Touch)", bg=Theme.SURFACE, font=Theme.FONT_SMALL).pack(anchor="w", pady=5)
+        tk.Checkbutton(left, text="Grupo especial para Licores (Impuestos)", bg=Theme.SURFACE, font=Theme.FONT_SMALL).pack(anchor="w")
 
-        right = tk.Frame(body, bg=Theme.BG_WHITE)
-        right.pack(side="right", fill="y", padx=4)
-        self._build_porcentaje_section(right, "% de Utilidad:")
-        self._build_porcentaje_section(right, "% de Descuento:")
-
-        btn_bar = tk.Frame(self, bg=Theme.BG_DEFAULT, pady=6)
+        # Botonera Inferior
+        btn_bar = tk.Frame(self, bg=Theme.FOOTER_BG, pady=15, padx=25)
         btn_bar.pack(fill="x", side="bottom")
-        tk.Button(btn_bar, text="🖫  Grabar", bg=Theme.BUTTON_GRAY, fg="white", font=Theme.FONT_BOLD, padx=10, pady=4).pack(side="right", padx=5)
-        tk.Button(btn_bar, text="🗑  Borrar", bg=Theme.BUTTON_GRAY, fg="white", font=Theme.FONT_BOLD, padx=10, pady=4).pack(side="right", padx=5)
-        tk.Button(btn_bar, text="⮐  Salir", bg=Theme.ACCENT_RED, fg="white", font=Theme.FONT_BOLD, padx=10, pady=4, command=self.destroy).pack(side="right", padx=5)
+        
+        UIHelpers.btn_primary(btn_bar, "🖫 Guardar Grupo").pack(side="right", padx=5)
+        
+        btn_exit = tk.Button(btn_bar, text="Cancelar", font=Theme.FONT_BOLD, bg="white", fg=Theme.TEXT_SECONDARY, 
+                             relief="flat", command=self.destroy)
+        btn_exit.pack(side="right", padx=5)
+        UIHelpers.apply_hover(btn_exit, "white", Theme.BORDER)
 
-        UIHelpers.create_status_bar(self, "Indique el Código de Grupo de Inventario", "ANT: 13   NUEVO")
-
-    def _build_row(self, parent, label, width, show_search=False):
-        r = tk.Frame(parent, bg=Theme.BG_WHITE)
-        r.pack(fill="x", pady=2)
-        tk.Label(r, text=label, bg=Theme.BG_WHITE, font=Theme.FONT_NORMAL).pack(side="left")
-        tk.Entry(r, width=width, relief="solid", bd=1).pack(side="left", padx=4)
-        if show_search:
-            tk.Button(r, text="Buscar", font=Theme.FONT_SMALL, relief="solid", bd=1, padx=4).pack(side="left", padx=4)
-
-    def _build_porcentaje_section(self, parent, title):
-        tk.Label(parent, text=title, bg=Theme.BG_WHITE, font=Theme.FONT_BOLD).pack(anchor="w", pady=(6,2))
-        for i in range(1, 8):
-            row = tk.Frame(parent, bg=Theme.BG_WHITE)
-            row.pack(anchor="w")
-            tk.Label(row, text=f"# {i}", bg=Theme.BG_WHITE, font=Theme.FONT_SMALL, width=3).pack(side="left")
-            e = tk.Entry(row, width=8, relief="solid", bd=1, justify="right")
-            e.insert(0, "0,000")
-            e.pack(side="left", padx=2, pady=1)
+    def _field(self, parent, label, width, row):
+        r = tk.Frame(parent, bg=Theme.SURFACE)
+        r.pack(fill="x", pady=4)
+        tk.Label(r, text=label, font=Theme.FONT_SMALL, bg=Theme.SURFACE, width=18, anchor="w").pack(side="left")
+        e = tk.Entry(r, width=width, relief="flat", highlightthickness=1, highlightbackground=Theme.BORDER)
+        e.pack(side="left", padx=5, ipady=3)
+        return e

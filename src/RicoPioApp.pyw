@@ -21,7 +21,7 @@ class RicoPioApp:
         self.root = root
         self.root.title("Sistema de Facturación Rico Pío - v0.1 Modular")
         self.root.configure(bg=Theme.BG_DEFAULT)
-        self.root.resizable(False, False)
+        self.root.resizable(True, True)
 
         self.container = tk.Frame(self.root, bg=Theme.BG_DEFAULT)
         self.container.pack(fill="both", expand=True)

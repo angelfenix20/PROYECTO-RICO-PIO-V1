@@ -2,11 +2,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Any
 from theme import Theme
+from ui_helpers import UIHelpers
 from logic import AuthService
 
 class LoginPanel(tk.Frame):
     def __init__(self, parent, controller):
-        super().__init__(parent, bg=Theme.BG_DEFAULT)
+        super().__init__(parent, bg=Theme.APP_BG)
         self.controller = controller
         
         # Inicialización de widgets
@@ -14,64 +15,72 @@ class LoginPanel(tk.Frame):
         self.sucursal_cb: Any = None
         self.user_cb: Any = None
         self.pass_entry: Any = None
-        self.estacion_entry: Any = None
         
         self._build_ui()
 
     def _build_ui(self):
-        header_frame = tk.Frame(self, bg=Theme.HEADER_BG_DARK, height=80)
-        header_frame.pack(fill="x")
+        # Contenedor Central (Card)
+        card = tk.Frame(self, bg=Theme.SURFACE, bd=0, highlightthickness=1, highlightbackground=Theme.BORDER)
+        card.place(relx=0.5, rely=0.5, anchor="center", width=420, height=520)
+
+        # Header del Card
+        header = tk.Frame(card, bg=Theme.PRIMARY, height=100)
+        header.pack(fill="x")
+        header.pack_propagate(False)
         
-        tk.Label(header_frame, text="Inicio de Sesión", fg=Theme.HEADER_FG_DARK, bg=Theme.HEADER_BG_DARK, font=("Arial", 14, "bold")).place(x=20, y=10)
-        tk.Label(header_frame, text="Administrativo 9.1", fg=Theme.ACCENT_BLUE, bg=Theme.HEADER_BG_DARK, font=("Arial", 10)).place(x=20, y=35)
-        tk.Label(header_frame, text="Versión en desarrollo", fg="white", bg="orange", font=("Arial", 9, "bold")).place(x=150, y=35)
+        tk.Label(header, text="RICO PÍO", fg="white", bg=Theme.PRIMARY, font=("Segoe UI", 24, "bold")).pack(pady=(20, 0))
+        tk.Label(header, text="Sistema de Gestión Gastronómica", fg="white", bg=Theme.PRIMARY, font=Theme.FONT_SMALL).pack()
 
-        logo_frame = tk.Frame(self, bg=Theme.BG_DEFAULT)
-        logo_frame.pack(pady=20)
-        tk.Label(logo_frame, text="Prototipo", font=("Arial", 25, "bold"), fg="#2c3e50", bg=Theme.BG_DEFAULT).pack(side="left")
-        tk.Label(logo_frame, text="SOFTWARE", font=("Arial", 8), fg="#7f8c8d", bg=Theme.BG_DEFAULT).pack(side="bottom")
+        # Cuerpo del Formulario
+        body = tk.Frame(card, bg=Theme.SURFACE, padx=40, pady=30)
+        body.pack(fill="both", expand=True)
 
-        form_frame = tk.LabelFrame(self, text=" Entrada al Sistema ", font=("Arial", 10, "bold"), bg="#f5f5f5", padx=20, pady=20)
-        form_frame.pack(padx=30, fill="x")
+        tk.Label(body, text="Bienvenido", font=("Segoe UI", 18, "bold"), bg=Theme.SURFACE, fg=Theme.TEXT_PRIMARY).pack(anchor="w", pady=(0, 20))
 
-        tk.Label(form_frame, text="Seleccione la empresa a operar", bg="#f5f5f5").pack(anchor="w")
-        self.empresa_cb = ttk.Combobox(form_frame, values=["RICO PIO 2000 C.A"], width=50)
-        self.empresa_cb.current(0)
-        self.empresa_cb.pack(pady=(0, 10))
+        # Campos
+        self._create_field(body, "Empresa", ["RICO PIO 2000 C.A"], is_combo=True)
+        self._create_field(body, "Sucursal", ["OFICINA PRINCIPAL"], is_combo=True)
+        
+        # Fila de Usuario y Clave
+        cred_frame = tk.Frame(body, bg=Theme.SURFACE)
+        cred_frame.pack(fill="x", pady=10)
 
-        tk.Label(form_frame, text="Seleccione la sucursal de la empresa", bg="#f5f5f5").pack(anchor="w")
-        self.sucursal_cb = ttk.Combobox(form_frame, values=["OFICINA PRINCIPAL"], width=50)
-        self.sucursal_cb.current(0)
-        self.sucursal_cb.pack(pady=(0, 10))
-
-        cred_frame = tk.Frame(form_frame, bg="#f5f5f5")
-        cred_frame.pack(fill="x")
-
-        user_frame = tk.Frame(cred_frame, bg="#f5f5f5")
-        user_frame.pack(side="left", fill="x", expand=True)
-        tk.Label(user_frame, text="Seleccione el usuario", bg="#f5f5f5").pack(anchor="w")
-        self.user_cb = ttk.Combobox(user_frame, values=["gaby01", "caja01"])
-        self.user_cb.pack(fill="x", padx=(0, 10))
+        u_frame = tk.Frame(cred_frame, bg=Theme.SURFACE)
+        u_frame.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        tk.Label(u_frame, text="Usuario", bg=Theme.SURFACE, font=Theme.FONT_SMALL, fg=Theme.TEXT_SECONDARY).pack(anchor="w")
+        self.user_cb = ttk.Combobox(u_frame, values=["gaby01", "caja01"], font=Theme.FONT_BODY)
+        self.user_cb.pack(fill="x", pady=5)
         self.user_cb.current(0)
 
-        pass_frame = tk.Frame(cred_frame, bg="#f5f5f5")
-        pass_frame.pack(side="left", fill="x", expand=True)
-        tk.Label(pass_frame, text="Indique la clave", bg="#f5f5f5").pack(anchor="w")
-        self.pass_entry = tk.Entry(pass_frame, show="*")
-        self.pass_entry.pack(fill="x")
+        p_frame = tk.Frame(cred_frame, bg=Theme.SURFACE)
+        p_frame.pack(side="left", fill="x", expand=True)
+        tk.Label(p_frame, text="Contraseña", bg=Theme.SURFACE, font=Theme.FONT_SMALL, fg=Theme.TEXT_SECONDARY).pack(anchor="w")
+        self.pass_entry = tk.Entry(p_frame, show="*", font=Theme.FONT_BODY, relief="flat", highlightthickness=1, highlightbackground=Theme.BORDER)
+        self.pass_entry.pack(fill="x", pady=5, ipady=3)
 
-        tk.Label(form_frame, text="Estación", bg="#f5f5f5").pack(anchor="w", pady=(10, 0))
-        self.estacion_entry = tk.Entry(form_frame, width=10)
-        self.estacion_entry.insert(0, "001")
-        self.estacion_entry.pack(anchor="w")
+        # Botón de Login
+        btn_login = UIHelpers.btn_primary(body, "Entrar al Sistema", command=self.validar_login)
+        btn_login.pack(fill="x", pady=(30, 0))
 
-        btn_frame = tk.Frame(self, bg=Theme.BG_DEFAULT)
-        btn_frame.pack(pady=20, padx=30, fill="x")
+        # Footer
+        footer = tk.Frame(self, bg=Theme.APP_BG)
+        footer.pack(side="bottom", fill="x", pady=20)
+        tk.Label(footer, text="Versión 9.1 Modular | Centauro Profesional", fg=Theme.TEXT_SECONDARY, bg=Theme.APP_BG, font=Theme.FONT_SMALL).pack()
 
-        tk.Button(btn_frame, text="Login al sistema", bg=Theme.ACCENT_RED, fg="white", font=("Arial", 10, "bold"), command=self.validar_login, height=2).pack(side="left", fill="x", expand=True, padx=(0, 5))
-        tk.Button(btn_frame, text="Salir", bg="white", font=("Arial", 10), command=self.controller.root.destroy, height=2).pack(side="left", fill="x", expand=True, padx=(5, 0))
-
-        tk.Label(self, text="Refactorizado con Mentalidad de Ingeniería | Rico Pio App", fg="#7f8c8d", bg=Theme.BG_DEFAULT, font=("Arial", 8, "italic")).pack(side="bottom", pady=10)
+    def _create_field(self, parent, label, values=None, is_combo=False):
+        frame = tk.Frame(parent, bg=Theme.SURFACE)
+        frame.pack(fill="x", pady=8)
+        
+        tk.Label(frame, text=label, bg=Theme.SURFACE, font=Theme.FONT_SMALL, fg=Theme.TEXT_SECONDARY).pack(anchor="w")
+        if is_combo:
+            cb = ttk.Combobox(frame, values=values, font=Theme.FONT_BODY)
+            cb.pack(fill="x", pady=5)
+            cb.current(0)
+            return cb
+        else:
+            e = tk.Entry(frame, font=Theme.FONT_BODY, relief="flat", highlightthickness=1, highlightbackground=Theme.BORDER)
+            e.pack(fill="x", pady=5, ipady=3)
+            return e
 
     def validar_login(self):
         usuario = self.user_cb.get()
@@ -81,7 +90,7 @@ class LoginPanel(tk.Frame):
 
         if user_data:
             rol = user_data["rol"]
-            messagebox.showinfo("Éxito", f"Bienvenido al sistema, {usuario} ({rol.capitalize()})")
+            messagebox.showinfo("Éxito", f"Bienvenido, {usuario}")
             if rol == "administrador":
                 self.controller.mostrar_panel_admin()
             else:
