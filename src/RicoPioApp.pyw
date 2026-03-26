@@ -12,6 +12,7 @@ from ui_helpers import _fix_tcl_tk, UIHelpers
 from panels.login import LoginPanel
 from panels.admin import AdminPanel
 from panels.cashier import CashierPanel
+from panels.punto_venta import PuntoVentaPanel
 
 # Aplicar parche de Tcl/Tk si es necesario
 _fix_tcl_tk()
@@ -51,7 +52,10 @@ class RicoPioApp:
         self._switch_frame(AdminPanel, geometry="950x650")
 
     def mostrar_panel_cajero(self):
-        self._switch_frame(CashierPanel, geometry="800x600")
+        self.mostrar_punto_venta()
+
+    def mostrar_punto_venta(self):
+        self._switch_frame(PuntoVentaPanel, geometry="1024x720")
 
 
 if __name__ == "__main__":

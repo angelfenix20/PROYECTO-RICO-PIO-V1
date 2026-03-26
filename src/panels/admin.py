@@ -89,20 +89,36 @@ class AdminPanel(tk.Frame):
         grid_f = tk.Frame(content, bg=Theme.APP_BG)
         grid_f.pack()
 
-        self.create_action_card(grid_f, "Punto de Venta", "Ventas rápidas y mesas", "💳", 0, 0)
-        self.create_action_card(grid_f, "Touch Screen", "Interfaz p/ Restaurante", "🍽️", 0, 1)
+        self.create_action_card(grid_f, "Punto de Venta", "Ventas y facturación", "💳", 0, 0, command=self.controller.mostrar_punto_venta)
+        self.create_action_card(grid_f, "Touch Screen", "Interfaz p/ Restaurante", "🍽️", 0, 1, command=self.controller.mostrar_punto_venta)
         self.create_action_card(grid_f, "Inventario", "Stock y Almacén", "📦", 0, 2)
 
-    def create_action_card(self, parent, title, desc, icon, row, col):
+    def create_action_card(self, parent, title, desc, icon, row, col, command=None):
         card = tk.Frame(parent, bg=Theme.SURFACE, width=190, height=170, relief="flat", 
                         highlightthickness=1, highlightbackground=Theme.BORDER)
+        if command:
+            card.configure(cursor="hand2")
+            
         card.grid(row=row, column=col, padx=10, pady=15)
         card.pack_propagate(False)
 
-        tk.Label(card, text=icon, font=("Segoe UI", 40), bg=Theme.SURFACE).pack(pady=(20, 10))
-        tk.Label(card, text=title, font=Theme.FONT_BOLD, bg=Theme.SURFACE, fg=Theme.TEXT_PRIMARY).pack()
-        tk.Label(card, text=desc, font=Theme.FONT_SMALL, bg=Theme.SURFACE, fg=Theme.TEXT_SECONDARY).pack(pady=5)
+        lbl_icon = tk.Label(card, text=icon, font=("Segoe UI", 40), bg=Theme.SURFACE)
+        lbl_icon.pack(pady=(20, 10))
+        lbl_title = tk.Label(card, text=title, font=Theme.FONT_BOLD, bg=Theme.SURFACE, fg=Theme.TEXT_PRIMARY)
+        lbl_title.pack()
+        lbl_desc = tk.Label(card, text=desc, font=Theme.FONT_SMALL, bg=Theme.SURFACE, fg=Theme.TEXT_SECONDARY)
+        lbl_desc.pack(pady=5)
         
         # Simular hover en la card
-        card.bind("<Enter>", lambda e: card.configure(highlightbackground=Theme.PRIMARY))
-        card.bind("<Leave>", lambda e: card.configure(highlightbackground=Theme.BORDER))
+        def on_enter(e): card.configure(highlightbackground=Theme.PRIMARY)
+        def on_leave(e): card.configure(highlightbackground=Theme.BORDER)
+        
+        card.bind("<Enter>", on_enter)
+        card.bind("<Leave>", on_leave)
+        
+        # Enlazar command a los widgets
+        if command:
+            card.bind("<Button-1>", lambda e: command())
+            lbl_icon.bind("<Button-1>", lambda e: command())
+            lbl_title.bind("<Button-1>", lambda e: command())
+            lbl_desc.bind("<Button-1>", lambda e: command())
