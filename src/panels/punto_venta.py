@@ -3,11 +3,13 @@ from tkinter import ttk
 from theme import Theme
 from ui_helpers import UIHelpers
 from logic import BusinessLogic
+from billing_logic import BillingLogic
 
 class PuntoVentaPanel(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg=Theme.APP_BG)
         self.controller = controller
+        self.billing = BillingLogic()
         
         # Variables de control
         self.total_str = tk.StringVar(value="0,00")
@@ -216,23 +218,28 @@ class PuntoVentaPanel(tk.Frame):
         self._build_mesas_tab(tab_mesas)
 
     def _build_grupos_tab(self, parent):
-        # Grilla de Grupos dinámica
-        grupos_del_sistema = BusinessLogic.get_grupos()
-        grupos_data = [(g.get("nombre", "DESCONOCIDO"), g.get("color", "#CCCCCC")) for g in grupos_del_sistema]
+        self.grupos_view_container = tk.Frame(parent, bg="white")
+        self.grupos_view_container.pack(fill="both", expand=True, padx=20, pady=20)
+        self._render_grupos_grid()
 
-        # Crear un canvas y frame para permitir padding interior de grilla (opcional, uso frames)
-        grid_frame = tk.Frame(parent, bg="white")
-        grid_frame.pack(fill="both", expand=True, padx=20, pady=20)
-        
-        # Configurar columnas para que se expandan uniformemente (5 columnas máximo)
+    def _render_grupos_grid(self):
+        # Limpiar
+        for w in self.grupos_view_container.winfo_children():
+            w.destroy()
+            
+        grupos_del_sistema = self.billing.get_grupos()
+        grupos_data = [(g["id"], g.get("nombre", "DESCONOCIDO"), g.get("color", "#CCCCCC")) for g in grupos_del_sistema]
+
+        # Configurar columnas
         for i in range(5):
-            grid_frame.columnconfigure(i, weight=1, uniform="group")
-        for i in range(4): # 4 filas
-            grid_frame.rowconfigure(i, weight=1, uniform="group")
+            self.grupos_view_container.columnconfigure(i, weight=1, uniform="group")
+        for i in range(4): 
+            self.grupos_view_container.rowconfigure(i, weight=1, uniform="group")
             
         col, row = 0, 0
-        for text, color in grupos_data:
-            btn = tk.Button(grid_frame, text=text, bg=color, fg="white", font=Theme.FONT_BOLD, relief="flat", wraplength=100)
+        for gid, text, color in grupos_data:
+            btn = tk.Button(self.grupos_view_container, text=text, bg=color, fg="white" if int(color[1:3],16)<150 else "black", font=Theme.FONT_BOLD, 
+                             relief="flat", wraplength=100, command=lambda g=gid: self._show_productos_grupo(g))
             btn.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
             
             col += 1
@@ -240,13 +247,56 @@ class PuntoVentaPanel(tk.Frame):
                 col = 0
                 row += 1
                 
-        # Rellenar casillas vacías
+        # Rellenar casillas vacías para mantener alineación
         while row < 4:
-            tk.Frame(grid_frame, bg="#F0F0F0", highlightthickness=1, highlightcolor="#DDDDDD").grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
+            tk.Frame(self.grupos_view_container, bg="#F0F0F0", highlightthickness=1, highlightcolor="#DDDDDD").grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
             col += 1
             if col > 4:
                 col = 0
                 row += 1
+
+    def _show_productos_grupo(self, grupo_id):
+        # Limpiar vista actual de grupos
+        for w in self.grupos_view_container.winfo_children():
+            w.destroy()
+            
+        productos = self.billing.get_productos_por_grupo(grupo_id)
+        
+        # Barra superior con botón volver
+        top_bar = tk.Frame(self.grupos_view_container, bg="white")
+        top_bar.grid(row=0, column=0, columnspan=5, sticky="ew", pady=(0, 10))
+        tk.Button(top_bar, text="← Volver a Grupos", font=Theme.FONT_BOLD, bg=Theme.SECONDARY, fg="white", 
+                  relief="flat", command=self._render_grupos_grid, padx=20).pack(side="left")
+        
+        # Grid para productos
+        for i in range(5):
+            self.grupos_view_container.columnconfigure(i, weight=1, uniform="prod")
+        for i in range(1, 5): 
+            self.grupos_view_container.rowconfigure(i, weight=1, uniform="prod")
+
+        col, row = 0, 1
+        for p in productos:
+            nombre = p.get('nombre', 'DESCONOCIDO')
+            precio = p.get('precio_usd', 0.0)
+            color = p.get('color') or '#CCCCCC'
+            fg_color = "white" if int(color[1:3], 16) < 150 else "black"
+            
+            # Texto multilinea con precio
+            display_text = f"{nombre}\n\n${precio:.2f}"
+            
+            btn = tk.Button(self.grupos_view_container, text=display_text, bg=color, fg=fg_color, font=("Segoe UI", 10, "bold"), 
+                             relief="flat", wraplength=100, command=lambda prod=p: self._add_item_to_receipt(prod))
+            btn.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
+            
+            col += 1
+            if col > 4:
+                col = 0
+                row += 1
+                
+    def _add_item_to_receipt(self, prod):
+        # Aqui conectariamos con el ticket de la izquierda, por ahora un log visual
+        print(f"Producto añadido: {prod['nombre']} a {prod['precio_usd']}")
+        # Lógica de agregar al recibo para una etapa posterior...
 
     def _build_mesas_tab(self, parent):
         # Grilla de Mesas dinámica

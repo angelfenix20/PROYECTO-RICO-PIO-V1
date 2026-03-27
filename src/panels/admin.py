@@ -91,7 +91,7 @@ class AdminPanel(tk.Frame):
 
         self.create_action_card(grid_f, "Punto de Venta", "Ventas y facturación", "💳", 0, 0, command=self.controller.mostrar_punto_venta)
         self.create_action_card(grid_f, "Touch Screen", "Interfaz p/ Restaurante", "🍽️", 0, 1, command=self.controller.mostrar_punto_venta)
-        self.create_action_card(grid_f, "Inventario", "Stock y Almacén", "📦", 0, 2)
+        self.create_action_card(grid_f, "Inventario", "Stock y Almacén", "📦", 0, 2, command=lambda: ArticulosInventarioDialog(self.controller.root))
 
     def create_action_card(self, parent, title, desc, icon, row, col, command=None):
         card = tk.Frame(parent, bg=Theme.SURFACE, width=190, height=170, relief="flat", 

@@ -43,7 +43,7 @@
         },
         {
             "codigo": "09",
-            "nombre": "EXTRAS",
+            "nombre": "EXTRAS MACARON",
             "color": "#FF8C00"
         },
         {
@@ -66,14 +66,14 @@
         {
             "id": "01",
             "label": "M01",
-            "ocupada": true,
-            "cliente": "diego llevar"
+            "ocupada": false,
+            "cliente": ""
         },
         {
             "id": "02",
             "label": "M02",
-            "ocupada": true,
-            "cliente": "gabriela mesa"
+            "ocupada": false,
+            "cliente": ""
         },
         {
             "id": "03",
