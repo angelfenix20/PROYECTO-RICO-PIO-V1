@@ -124,3 +124,30 @@ class BillingLogic:
         query = "SELECT SUM(total) as total_dia FROM facturas WHERE fecha LIKE ? AND estatus = 'PAGADA'"
         result = self.db.fetch_one(query, (f"{hoy}%",))
         return result['total_dia'] if result and result['total_dia'] else 0.0
+
+    # --- Gestión de Mesas (Centralizada DB) ---
+    def get_mesas(self):
+        query = "SELECT * FROM mesas ORDER BY label ASC"
+        return self.db.fetch_all(query)
+
+    def actualizar_mesa(self, mesa_id, ocupada, cliente=""):
+        query = "UPDATE mesas SET ocupada = ?, cliente = ? WHERE id = ?"
+        return self.db.execute_query(query, (1 if ocupada else 0, cliente, mesa_id))
+
+    def agregar_mesa(self, label):
+        query = "INSERT INTO mesas (label) VALUES (?)"
+        return self.db.execute_query(query, (label,))
+
+    def eliminar_ultima_mesa(self):
+        query = "DELETE FROM mesas WHERE id = (SELECT MAX(id) FROM mesas)"
+        return self.db.execute_query(query)
+
+    # --- Configuración Global (Centralizada DB) ---
+    def get_config(self, clave, default=None):
+        query = "SELECT valor FROM configuracion WHERE clave = ?"
+        res = self.db.fetch_one(query, (clave,))
+        return res["valor"] if res else default
+
+    def set_config(self, clave, valor):
+        query = "INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)"
+        return self.db.execute_query(query, (clave, str(valor)))

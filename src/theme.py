@@ -1,46 +1,49 @@
 class Theme:
-    # Colores Base (Sistema Slate/Indigo)
-    APP_BG = "#f8fafc"      # Fondo principal ultra claro
-    SURFACE = "#ffffff"     # Superficie de tarjetas y paneles
-    BORDER = "#e2e8f0"      # Bordes suaves
+    # --- Colores Base (Gestim Inspired - Deep Dark) ---
+    APP_BG = "#0c0a09"       # Stone 950 (Fondo profundo)
+    SURFACE = "#1c1917"      # Stone 900 (Panel elevado)
+    SURFACE_LIGHT = "#292524" # Stone 800 (Hover/Selección)
+    BORDER = "#44403c"       # Stone 700 (Bordes sutiles)
     
-    # Textos
-    TEXT_PRIMARY = "#0f172a"  # Títulos y texto fuerte
-    TEXT_SECONDARY = "#64748b" # Texto descriptivo
-    TEXT_LIGHT = "#ffffff"     # Texto sobre fondos oscuros
+    # --- Textos ---
+    TEXT_PRIMARY = "#fafaf9"   # Stone 50 (Blanco roto)
+    TEXT_SECONDARY = "#a8a29e" # Stone 400 (Gris suave)
+    TEXT_LIGHT = "#ffffff"     
     
-    # Colores de Acción
-    PRIMARY = "#4f46e5"       # Indigo 600
-    PRIMARY_HOVER = "#4338ca" # Indigo 700
-    ACCENT = "#10b981"        # Emerald 500 (Éxito)
-    DANGER = "#ef4444"        # Red 500
-    WARNING = "#f59e0b"       # Amber 500
+    # --- Colores de Acción ---
+    PRIMARY = "#10b981"       # Emerald 500 (Gestim Green)
+    PRIMARY_HOVER = "#059669" # Emerald 600
+    SECONDARY = "#78350f"     # Amber 900 (Acento marrón Gestim)
+    ACCENT = "#f59e0b"        # Amber 500 (Alertas)
+    DANGER = "#ef4444"        # Rose 500
+    SUCCESS = "#10b981"
     
-    # Navegación y Paneles
-    SIDEBAR_BG = "#1e293b"    # Slate 800 (Fondo oscuro profesional)
-    HEADER_BG = "#ffffff"
-    
-    # Tipografías (Referencia)
-    FONT_FAMILY = "Segoe UI" # Fuente nativa de Windows que luce moderna
-    FONT_H1 = ("Segoe UI", 16, "bold")
-    FONT_H2 = ("Segoe UI", 12, "bold")
+    # --- Tipografías (Moderna) ---
+    FONT_FAMILY = "Segoe UI"
+    FONT_H1 = ("Segoe UI", 18, "bold")
+    FONT_H2 = ("Segoe UI", 14, "bold")
+    FONT_H3 = ("Segoe UI", 11, "bold")
     FONT_BODY = ("Segoe UI", 10)
-    FONT_SMALL = ("Segoe UI", 9)
     FONT_BOLD = ("Segoe UI", 10, "bold")
+    FONT_SMALL = ("Segoe UI", 9)
 
-    # Estática compatible con el código anterior (para no romper nada de golpe)
+    # --- Alias para compatibilidad ---
     BG_DEFAULT = APP_BG
     BG_WHITE = SURFACE
+    HEADER_BG = SURFACE
+    SIDEBAR_BG = "#0c0a09"
+    FOOTER_BG = "#1c1917"
+
+    # Estática compatible con el código anterior
     HEADER_BG_DARK = SIDEBAR_BG
     HEADER_FG_DARK = TEXT_LIGHT
     ACCENT_BLUE = PRIMARY
     ACCENT_RED = DANGER
     BUTTON_GRAY = TEXT_SECONDARY
-    MODAL_HEADER_BG = PRIMARY
-    ENTRY_HIGHLIGHT = "#fefce8" # Suave amarillo para foco
-    SUCCESS_GREEN = ACCENT
-    DARK_PANEL = "#334155"
-    FOOTER_BG = "#f1f5f9"
+    MODAL_HEADER_BG = SECONDARY
+    ENTRY_HIGHLIGHT = "#3f3f46" # Zinc 700
+    SUCCESS_GREEN = SUCCESS
+    DARK_PANEL = SURFACE
     
     # Mapeo de fuentes anteriores
     FONT_NORMAL = FONT_BODY

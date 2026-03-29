@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from theme import Theme
 from ui_helpers import UIHelpers
 from logic import BusinessLogic
@@ -12,392 +12,333 @@ class PuntoVentaPanel(tk.Frame):
         self.billing = BillingLogic()
         
         # Variables de control
+        self.cart = []
+        self.tasa_usd = BusinessLogic.get_tasa_usd()
         self.total_str = tk.StringVar(value="0,00")
-        self.tasa_str = tk.StringVar(value=f"({BusinessLogic.get_tasa_usd():.2f})")
+        self.total_usd_str = tk.StringVar(value="0,00 $")
+        self.tasa_str = tk.StringVar(value=f"({self.tasa_usd:.2f})")
+        self.search_query = tk.StringVar()
+        
+        # Tracking de UI
+        self.category_frames = {} # {id: frame_de_productos}
+        self.expanded_category = None
         
         self._build_ui()
 
     def _build_ui(self):
-        # Header Principal
-        header = tk.Frame(self, bg=Theme.PRIMARY, height=40)
+        # Header (Top Bar)
+        header = tk.Frame(self, bg=Theme.SURFACE, height=60, highlightthickness=1, highlightbackground=Theme.BORDER)
         header.pack(fill="x")
         header.pack_propagate(False)
 
-        tk.Label(header, text="Punto de Venta TOUCH SCREEN", font=Theme.FONT_H2, bg=Theme.PRIMARY, fg="white").pack(side="left", padx=10)
+        tk.Label(header, text="RICO PÍO", font=("Segoe UI", 18, "bold"), bg=Theme.SURFACE, fg=Theme.PRIMARY).pack(side="left", padx=20)
+        tk.Label(header, text="Punto de Venta", font=Theme.FONT_H3, bg=Theme.SURFACE, fg=Theme.TEXT_SECONDARY).pack(side="left")
         
-        # Frame de botones del header
-        btn_frame = tk.Frame(header, bg=Theme.PRIMARY)
+        # Botones de Acción Derecha
+        btn_frame = tk.Frame(header, bg=Theme.SURFACE)
         btn_frame.pack(side="right", padx=10)
         
-        tk.Label(btn_frame, text="Tasa Actual USD$", font=Theme.FONT_SMALL, bg=Theme.PRIMARY, fg="white").pack(side="left", padx=(15, 0))
-        tk.Label(btn_frame, textvariable=self.tasa_str, font=Theme.FONT_SMALL, bg=Theme.PRIMARY, fg="white").pack(side="left", padx=(5, 15))
-        
-        if self.controller.current_frame.__class__.__name__ == "AdminPanel":
-            btn_volver = tk.Button(btn_frame, text="Volver al Panel Admin", bg=Theme.DANGER, fg="white", 
-                                   font=Theme.FONT_BOLD, relief="flat", command=self.controller.mostrar_panel_admin)
-            btn_volver.pack(side="left", padx=5)
-        else:
-            btn_corte = tk.Button(btn_frame, text="Corte de Caja", bg=Theme.ACCENT, fg="white", 
-                                  font=Theme.FONT_BOLD, relief="flat", command=self.controller.mostrar_login)
-            btn_corte.pack(side="left", padx=5)
+        # Tasa USD
+        tasa_container = tk.Frame(btn_frame, bg=Theme.SURFACE_LIGHT, padx=10, pady=5)
+        tasa_container.pack(side="left", padx=10)
+        tk.Label(tasa_container, text="TASA USD", font=Theme.FONT_SMALL, bg=Theme.SURFACE_LIGHT, fg=Theme.TEXT_SECONDARY).pack()
+        tk.Label(tasa_container, textvariable=self.tasa_str, font=Theme.FONT_BOLD, bg=Theme.SURFACE_LIGHT, fg=Theme.ACCENT).pack()
 
-        # Botón Cerrar Sesión (Siempre visible)
-        btn_logout = tk.Button(btn_frame, text="Cerrar Sesión", bg=Theme.DANGER, fg="white", 
-                               font=Theme.FONT_BOLD, relief="flat", command=self.controller.mostrar_login)
-        btn_logout.pack(side="left", padx=5)
+        # Botón Logout
+        tk.Button(btn_frame, text="Cerrar Sesión", bg=Theme.DANGER, fg="white", font=Theme.FONT_BOLD, 
+                  relief="flat", padx=15, pady=8, command=self.controller.mostrar_login).pack(side="left", padx=5)
 
-        # Contenedor principal dividido en izquierda y derecha
-        main_container = tk.Frame(self, bg=Theme.APP_BG)
-        main_container.pack(fill="both", expand=True, padx=5, pady=5)
+        # Contenedor Principal (2 Columnas)
+        main_body = tk.Frame(self, bg=Theme.APP_BG)
+        main_body.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Panel Izquierdo (Facturación)
-        left_panel = tk.Frame(main_container, bg=Theme.SURFACE, width=450, highlightthickness=1, highlightbackground=Theme.BORDER)
-        left_panel.pack(side="left", fill="y", padx=(0, 5))
-        left_panel.pack_propagate(False)
-        self._build_left_panel(left_panel)
+        # --- COLUMNA DERECHA (Selección de Productos - Mayor peso) ---
+        selection_panel = tk.Frame(main_body, bg=Theme.APP_BG)
+        selection_panel.pack(side="right", fill="both", expand=True, padx=(5, 0))
         
-        # Panel Derecho (Pestañas)
-        right_panel = tk.Frame(main_container, bg=Theme.SURFACE, highlightthickness=1, highlightbackground=Theme.BORDER)
-        right_panel.pack(side="left", fill="both", expand=True)
-        self._build_right_panel(right_panel)
-
-    def _build_left_panel(self, parent):
-        # Total
-        top_frame = tk.Frame(parent, bg=Theme.SURFACE, pady=10, padx=10)
-        top_frame.pack(fill="x")
+        # Buscador
+        search_frame = tk.Frame(selection_panel, bg=Theme.SURFACE, padx=10, pady=10, highlightthickness=1, highlightbackground=Theme.BORDER)
+        search_frame.pack(fill="x", pady=(0, 10))
         
-        total_frame = tk.Frame(top_frame, bg="black", pady=10)
-        total_frame.pack(fill="x")
-        tk.Label(total_frame, text="Total Cuenta Actual:", bg="black", fg="white", font=Theme.FONT_BODY).pack(anchor="w", padx=10)
-        tk.Label(total_frame, textvariable=self.total_str, bg="black", fg="#00FF00", font=("Segoe UI", 36, "bold")).pack(anchor="e", padx=10)
-        tk.Label(total_frame, text="PVP+I.V.A.: 0,0000 $", bg="black", fg="cyan", font=Theme.FONT_SMALL).pack(anchor="e", padx=10)
+        tk.Label(search_frame, text="🔍", bg=Theme.SURFACE, font=Theme.FONT_H2).pack(side="left", padx=(5, 10))
+        self.search_entry = tk.Entry(search_frame, textvariable=self.search_query, font=Theme.FONT_H2, 
+                                     bg=Theme.SURFACE, fg=Theme.TEXT_PRIMARY, relief="flat", insertbackground="white")
+        self.search_entry.pack(side="left", fill="x", expand=True)
+        self.search_query.trace_add("write", lambda *args: self._on_search())
         
-        # Notebook Pestañas Izquierda
-        style = ttk.Style()
-        style.configure("Left.TNotebook", background=Theme.SURFACE)
-        style.configure("Left.TNotebook.Tab", font=Theme.FONT_BOLD, padding=[10, 2])
-
-        left_notebook = ttk.Notebook(parent, style="Left.TNotebook")
-        left_notebook.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        # Scrollable Area para Categorías/Productos
+        self.scroll_canvas = tk.Canvas(selection_panel, bg=Theme.APP_BG, highlightthickness=0)
+        self.scroll_canvas.pack(side="left", fill="both", expand=True)
         
-        tab_operacion = tk.Frame(left_notebook, bg=Theme.SURFACE)
-        tab_transito = tk.Frame(left_notebook, bg=Theme.SURFACE)
-        tab_procesos = tk.Frame(left_notebook, bg=Theme.SURFACE)
-        
-        left_notebook.add(tab_operacion, text="F7 - Operación Actual")
-        left_notebook.add(tab_transito, text="F6 - En Tránsito")
-        left_notebook.add(tab_procesos, text="F10 - Procesos")
-        
-        self._build_tab_operacion(tab_operacion)
-        self._build_tab_transito(tab_transito)
-        self._build_tab_procesos(tab_procesos)
-
-    def _build_tab_operacion(self, parent):
-        # Formulario de datos
-        form_frame = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=5)
-        form_frame.pack(fill="x")
-        
-        tk.Label(form_frame, text="CLIENTE: 0 USUARIO FINAL", bg=Theme.SURFACE, fg=Theme.PRIMARY, font=Theme.FONT_BOLD).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 10))
-        
-        tk.Label(form_frame, text="Mesa:", bg=Theme.SURFACE, font=Theme.FONT_SMALL).grid(row=1, column=0, sticky="w")
-        self.entry_mesa = tk.Entry(form_frame, width=15, font=Theme.FONT_BODY)
-        self.entry_mesa.grid(row=1, column=1, sticky="w", padx=5)
-        self.entry_mesa.bind("<Return>", lambda e: self._on_procesar())
-        
-        tk.Label(form_frame, text="Vendedor:", bg=Theme.SURFACE, font=Theme.FONT_SMALL).grid(row=1, column=2, sticky="w")
-        self.entry_vendedor = tk.Entry(form_frame, width=15, font=Theme.FONT_BODY, fg="blue")
-        self.entry_vendedor.grid(row=1, column=3, sticky="w", padx=5)
-        self.entry_vendedor.insert(0, "vendedor")
-        self.entry_vendedor.config(state="readonly")
-        
-        tk.Label(form_frame, text="Cód Artículo:", bg=Theme.SURFACE, font=Theme.FONT_SMALL).grid(row=2, column=0, sticky="w", pady=(10, 0))
-        tk.Entry(form_frame, width=15, font=Theme.FONT_BODY).grid(row=2, column=1, sticky="w", padx=5, pady=(10, 0))
-        
-        tk.Label(form_frame, text="Cantidad:", bg=Theme.SURFACE, font=Theme.FONT_SMALL).grid(row=2, column=2, sticky="w", pady=(10, 0))
-        tk.Entry(form_frame, width=15, font=Theme.FONT_BODY).grid(row=2, column=3, sticky="w", padx=5, pady=(10, 0))
-        
-        tk.Button(form_frame, text="✓ Procesar", bg=Theme.ACCENT, fg="white", font=Theme.FONT_BOLD, relief="flat", command=self._on_procesar).grid(row=3, column=3, sticky="ew", pady=(10, 0), padx=5)
-        
-        # Tabla de Detalles
-        table_frame = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=10)
-        table_frame.pack(fill="both", expand=True)
-        
-        columns = ("Nota", "Cant.", "Descripción", "Tot.Linea")
-        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=10)
-        self.tree.heading("Nota", text="Nota")
-        self.tree.column("Nota", width=50, anchor="center")
-        self.tree.heading("Cant.", text="Cant.")
-        self.tree.column("Cant.", width=50, anchor="center")
-        self.tree.heading("Descripción", text="Descripción")
-        self.tree.column("Descripción", width=180, anchor="w")
-        self.tree.heading("Tot.Linea", text="Tot.Linea")
-        self.tree.column("Tot.Linea", width=80, anchor="e")
-        
-        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscroll=scrollbar.set)
-        
-        self.tree.pack(side="left", fill="both", expand=True)
+        scrollbar = ttk.Scrollbar(selection_panel, orient="vertical", command=self.scroll_canvas.yview)
         scrollbar.pack(side="right", fill="y")
         
-        # Botones Inferiores Factura
-        bottom_buttons = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=10)
-        bottom_buttons.pack(fill="x", side="bottom")
+        self.scroll_canvas.configure(yscrollcommand=scrollbar.set)
         
-        tk.Button(bottom_buttons, text="✓ Resumir Líneas", bg=Theme.PRIMARY, fg="white", font=Theme.FONT_BOLD, relief="flat").pack(side="left", fill="x", expand=True, padx=2)
-        tk.Button(bottom_buttons, text="Saldo", bg="#DDDDDD", fg="black", font=Theme.FONT_BOLD, relief="flat").pack(side="left", fill="x", expand=True, padx=2)
+        self.products_container = tk.Frame(self.scroll_canvas, bg=Theme.APP_BG)
+        self.scroll_canvas.create_window((0, 0), window=self.products_container, anchor="nw", tags="frame")
+        
+        self.products_container.bind("<Configure>", lambda e: self.scroll_canvas.configure(scrollregion=self.scroll_canvas.bbox("all")))
+        self.scroll_canvas.bind("<Configure>", lambda e: self.scroll_canvas.itemconfig("frame", width=e.width))
 
-    def _build_tab_transito(self, parent):
-        # Tabla de Cuentas Abiertas (En Tránsito)
-        table_frame = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=10)
-        table_frame.pack(fill="both", expand=True)
+        self._render_accordion()
+
+        # --- COLUMNA IZQUIERDA (Carrito - Menor peso pero fijo) ---
+        cart_panel = tk.Frame(main_body, bg=Theme.SURFACE, width=380, highlightthickness=1, highlightbackground=Theme.BORDER)
+        cart_panel.pack(side="left", fill="y", padx=(0, 5))
+        cart_panel.pack_propagate(False)
         
-        columns = ("Abrir", "Vendedor", "Cliente", "Mesa", "Monto Neto Bs.", "Status")
-        tree_transito = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
+        self._build_cart_panel(cart_panel)
+
+    def _build_cart_panel(self, parent):
+        # Cabecera Carrito
+        tk.Label(parent, text="PEDIDO ACTUAL", font=Theme.FONT_H2, bg=Theme.SURFACE, fg=Theme.TEXT_SECONDARY, pady=15).pack()
         
-        widths = {"Abrir": 50, "Vendedor": 80, "Cliente": 120, "Mesa": 50, "Monto Neto Bs.": 100, "Status": 60}
-        for col in columns:
-            tree_transito.heading(col, text=col)
-            tree_transito.column(col, width=widths[col], anchor="center" if col != "Cliente" else "w")
-            
-        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree_transito.yview)
-        tree_transito.configure(yscroll=scrollbar.set)
+        # Area de Items (Scrollable)
+        items_outer = tk.Frame(parent, bg=Theme.SURFACE)
+        items_outer.pack(fill="both", expand=True, padx=5)
         
-        tree_transito.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        self.cart_canvas = tk.Canvas(items_outer, bg=Theme.SURFACE, highlightthickness=0)
+        self.cart_canvas.pack(side="left", fill="both", expand=True)
         
-        # Footer
-        footer = tk.Frame(parent, bg=Theme.SURFACE, padx=10, pady=10)
+        c_scrollbar = ttk.Scrollbar(items_outer, orient="vertical", command=self.cart_canvas.yview)
+        c_scrollbar.pack(side="right", fill="y")
+        
+        self.cart_canvas.configure(yscrollcommand=c_scrollbar.set)
+        self.cart_items_frame = tk.Frame(self.cart_canvas, bg=Theme.SURFACE)
+        self.cart_canvas.create_window((0, 0), window=self.cart_items_frame, anchor="nw", tags="frame")
+        
+        self.cart_items_frame.bind("<Configure>", lambda e: self.cart_canvas.configure(scrollregion=self.cart_canvas.bbox("all")))
+        self.cart_canvas.bind("<Configure>", lambda e: self.cart_canvas.itemconfig("frame", width=e.width))
+
+        # Footer de Totales (Sticky)
+        footer = tk.Frame(parent, bg=Theme.SURFACE_LIGHT, padx=20, pady=20)
         footer.pack(fill="x", side="bottom")
-        tk.Label(footer, text="Ctas.Abiertas:", bg=Theme.SURFACE, font=Theme.FONT_BOLD).pack(side="left")
-        tk.Label(footer, text="0,00 Bs.", bg=Theme.SURFACE, font=Theme.FONT_BOLD).pack(side="right")
+        
+        row_sub = tk.Frame(footer, bg=Theme.SURFACE_LIGHT)
+        row_sub.pack(fill="x")
+        tk.Label(row_sub, text="Subtotal", font=Theme.FONT_BODY, bg=Theme.SURFACE_LIGHT, fg=Theme.TEXT_SECONDARY).pack(side="left")
+        self.lbl_subtotal = tk.Label(row_sub, text="0,00 $", font=Theme.FONT_BOLD, bg=Theme.SURFACE_LIGHT, fg=Theme.TEXT_PRIMARY)
+        self.lbl_subtotal.pack(side="right")
 
-    def _build_tab_procesos(self, parent):
-        grid_frame = tk.Frame(parent, bg=Theme.SURFACE)
-        grid_frame.pack(fill="both", expand=True, padx=20, pady=20)
-        
-        for i in range(2):
-            grid_frame.columnconfigure(i, weight=1, uniform="proc")
-            
-        def create_btn(row, col, text, colspan=1):
-            btn = tk.Button(grid_frame, text=text, bg="#E0E0E0", fg="black", font=Theme.FONT_BOLD, relief="flat", height=3)
-            btn.grid(row=row, column=col, columnspan=colspan, sticky="nsew", padx=5, pady=5)
-            
-        create_btn(0, 0, "Mesas")
-        create_btn(0, 1, "") # Filler or empty space (in image 4, 'Mesas' is just a big button)
-        
-        create_btn(1, 0, "Despachadores")
-        create_btn(1, 1, "Tipos de Mesas")
-        
-        create_btn(2, 0, "Reportes\nF5")
-        create_btn(2, 1, "Saldos\nF3")
-        
-        # Botón grande "Procesos" en el fondo
-        btn_proc = tk.Button(grid_frame, text="Procesos", bg="#E0E0E0", fg="black", font=Theme.FONT_BOLD, relief="flat", height=3)
-        btn_proc.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
-        
-        # Ajustar pesos de filas
-        for i in range(4):
-            grid_frame.rowconfigure(i, weight=1)
+        row_iva = tk.Frame(footer, bg=Theme.SURFACE_LIGHT, pady=5)
+        row_iva.pack(fill="x")
+        tk.Label(row_iva, text="I.V.A (16%)", font=Theme.FONT_BODY, bg=Theme.SURFACE_LIGHT, fg=Theme.TEXT_SECONDARY).pack(side="left")
+        self.lbl_iva = tk.Label(row_iva, text="0,00 $", font=Theme.FONT_BOLD, bg=Theme.SURFACE_LIGHT, fg=Theme.TEXT_PRIMARY)
+        self.lbl_iva.pack(side="right")
 
-    def _build_right_panel(self, parent):
-        # Notebook (Pestañas)
-        style = ttk.Style()
-        style.configure("TPos.TNotebook", background=Theme.SURFACE)
-        style.configure("TPos.TNotebook.Tab", font=Theme.FONT_BOLD, padding=[15, 5])
-        
-        notebook = ttk.Notebook(parent, style="TPos.TNotebook")
-        notebook.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        tab_grupos = tk.Frame(notebook, bg="white")
-        tab_mesas = tk.Frame(notebook, bg="white")
-        
-        notebook.add(tab_grupos, text="Grupos")
-        notebook.add(tab_mesas, text="Mesas")
-        
-        self._build_grupos_tab(tab_grupos)
-        self._build_mesas_tab(tab_mesas)
+        tk.Frame(footer, bg=Theme.BORDER, height=1).pack(fill="x", pady=10)
 
-    def _build_grupos_tab(self, parent):
-        self.grupos_view_container = tk.Frame(parent, bg="white")
-        self.grupos_view_container.pack(fill="both", expand=True, padx=20, pady=20)
-        self._render_grupos_grid()
+        row_total = tk.Frame(footer, bg=Theme.SURFACE_LIGHT)
+        row_total.pack(fill="x")
+        tk.Label(row_total, text="TOTAL", font=Theme.FONT_H2, bg=Theme.SURFACE_LIGHT, fg=Theme.PRIMARY).pack(side="left")
+        
+        totals_stack = tk.Frame(row_total, bg=Theme.SURFACE_LIGHT)
+        totals_stack.pack(side="right", anchor="e")
+        tk.Label(totals_stack, textvariable=self.total_str, font=("Segoe UI", 24, "bold"), bg=Theme.SURFACE_LIGHT, fg=Theme.PRIMARY).pack(anchor="e")
+        tk.Label(totals_stack, textvariable=self.total_usd_str, font=Theme.FONT_BOLD, bg=Theme.SURFACE_LIGHT, fg=Theme.ACCENT).pack(anchor="e")
 
-    def _render_grupos_grid(self):
+        # Botón Cobrar
+        btn_pay = tk.Button(footer, text="Finalizar y Cobrar", bg=Theme.PRIMARY, fg="white", font=Theme.FONT_H2, 
+                            relief="flat", pady=12, command=self._on_procesar)
+        btn_pay.pack(fill="x", pady=(20, 0))
+
+    def _render_accordion(self):
         # Limpiar
-        for w in self.grupos_view_container.winfo_children():
+        for w in self.products_container.winfo_children():
             w.destroy()
-            
-        grupos_del_sistema = self.billing.get_grupos()
-        grupos_data = [(g["id"], g.get("nombre", "DESCONOCIDO"), g.get("color", "#CCCCCC")) for g in grupos_del_sistema]
-
-        # Configurar columnas
-        for i in range(5):
-            self.grupos_view_container.columnconfigure(i, weight=1, uniform="group")
-        for i in range(4): 
-            self.grupos_view_container.rowconfigure(i, weight=1, uniform="group")
-            
-        col, row = 0, 0
-        for gid, text, color in grupos_data:
-            btn = tk.Button(self.grupos_view_container, text=text, bg=color, fg="white" if int(color[1:3],16)<150 else "black", font=Theme.FONT_BOLD, 
-                             relief="flat", wraplength=100, command=lambda g=gid: self._show_productos_grupo(g))
-            btn.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
-            
-            col += 1
-            if col > 4:
-                col = 0
-                row += 1
-                
-        # Rellenar casillas vacías para mantener alineación
-        while row < 4:
-            tk.Frame(self.grupos_view_container, bg="#F0F0F0", highlightthickness=1, highlightcolor="#DDDDDD").grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
-            col += 1
-            if col > 4:
-                col = 0
-                row += 1
-
-    def _show_productos_grupo(self, grupo_id):
-        # Limpiar vista actual de grupos
-        for w in self.grupos_view_container.winfo_children():
-            w.destroy()
-            
-        productos = self.billing.get_productos_por_grupo(grupo_id)
         
-        # Barra superior con botón volver
-        top_bar = tk.Frame(self.grupos_view_container, bg="white")
-        top_bar.grid(row=0, column=0, columnspan=5, sticky="ew", pady=(0, 10))
-        tk.Button(top_bar, text="← Volver a Grupos", font=Theme.FONT_BOLD, bg=Theme.SECONDARY, fg="white", 
-                  relief="flat", command=self._render_grupos_grid, padx=20).pack(side="left")
-        
-        # Grid para productos
-        for i in range(5):
-            self.grupos_view_container.columnconfigure(i, weight=1, uniform="prod")
-        for i in range(1, 5): 
-            self.grupos_view_container.rowconfigure(i, weight=1, uniform="prod")
+        grupos = self.billing.get_grupos()
+        for g in grupos:
+            self._create_category_row(g)
 
-        col, row = 0, 1
-        for p in productos:
-            nombre = p.get('nombre', 'DESCONOCIDO')
-            precio = p.get('precio_usd', 0.0)
-            color = p.get('color') or '#CCCCCC'
-            fg_color = "white" if int(color[1:3], 16) < 150 else "black"
-            
-            # Texto multilinea con precio
-            display_text = f"{nombre}\n\n${precio:.2f}"
-            
-            btn = tk.Button(self.grupos_view_container, text=display_text, bg=color, fg=fg_color, font=("Segoe UI", 10, "bold"), 
-                             relief="flat", wraplength=100, command=lambda prod=p: self._add_item_to_receipt(prod))
-            btn.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
-            
-            col += 1
-            if col > 4:
-                col = 0
-                row += 1
-                
-    def _add_item_to_receipt(self, prod):
-        # Aqui conectariamos con el ticket de la izquierda, por ahora un log visual
-        print(f"Producto añadido: {prod['nombre']} a {prod['precio_usd']}")
-        # Lógica de agregar al recibo para una etapa posterior...
+    def _create_category_row(self, grupo):
+        frame = tk.Frame(self.products_container, bg=Theme.SURFACE, pady=2, highlightthickness=1, highlightbackground=Theme.BORDER)
+        frame.pack(fill="x", pady=2)
+        
+        # Header del acordeón
+        header = tk.Frame(frame, bg=Theme.SURFACE, cursor="hand2")
+        header.pack(fill="x", padx=15, pady=10)
+        
+        color_dot = tk.Frame(header, bg=grupo.get("color", Theme.TEXT_SECONDARY), width=12, height=12)
+        color_dot.pack(side="left", padx=(0, 10))
+        color_dot.pack_propagate(False)
 
-    def _build_mesas_tab(self, parent):
-        # Grilla de Mesas dinámica
-        self.mesas_container = tk.Frame(parent, bg="white")
-        self.mesas_container.pack(fill="both", expand=True, padx=20, pady=20)
+        tk.Label(header, text=grupo["nombre"].upper(), font=Theme.FONT_BOLD, bg=Theme.SURFACE, fg=Theme.TEXT_PRIMARY).pack(side="left")
         
-        self.refresh_mesas()
+        arrow = tk.Label(header, text="▼", font=Theme.FONT_SMALL, bg=Theme.SURFACE, fg=Theme.TEXT_SECONDARY)
+        arrow.pack(side="right")
         
-        # Botones de gestión de mesas (Agregar/Quitar)
-        btn_area = tk.Frame(parent, bg="white")
-        btn_area.pack(fill="x", side="bottom", pady=10)
+        # Contenedor de productos (oculto por defecto)
+        prod_frame = tk.Frame(frame, bg=Theme.APP_BG, pady=10)
+        self.category_frames[grupo["id"]] = (prod_frame, arrow)
         
-        tk.Button(btn_area, text="[+] Agregar Mesa", bg=Theme.ACCENT, fg="white", font=Theme.FONT_BOLD, command=self._add_mesa).pack(side="left", padx=10)
-        tk.Button(btn_area, text="[-] Quitar Mesa", bg=Theme.DANGER, fg="white", font=Theme.FONT_BOLD, command=self._remove_mesa).pack(side="left", padx=10)
-
-    def refresh_mesas(self):
-        for widget in self.mesas_container.winfo_children():
-            widget.destroy()
-            
-        mesas = BusinessLogic.get_mesas()
+        # Eventos de toggle
+        for widget in [header, color_dot]:
+            widget.bind("<Button-1>", lambda e, gid=grupo["id"]: self._toggle_category(gid))
         
-        # Grid dinámico (5 columnas)
-        cols = 5
-        for i, mesa in enumerate(mesas):
-            row, col = divmod(i, cols)
-            self.mesas_container.columnconfigure(col, weight=1, uniform="mesa")
-            self.mesas_container.rowconfigure(row, weight=1, uniform="mesa")
-            
-            bg_color = Theme.PRIMARY if mesa["ocupada"] else "white"
-            text = f"{mesa['label']}\n{mesa['cliente']}" if mesa["ocupada"] else mesa["label"]
-            fg_color = "white" if mesa["ocupada"] else "black"
-            
-            btn_card = tk.Frame(self.mesas_container, bg="white", highlightthickness=1, highlightbackground="#DDDDDD")
-            btn_card.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
-            btn_card.pack_propagate(False)
-            
-            btn = tk.Button(btn_card, text=text, bg=bg_color, fg=fg_color, font=("Segoe UI", 9, "bold"), relief="flat")
-            btn.pack(fill="both", expand=True)
-            
-            # Click en mesa para liberar o ver info
-            btn.bind("<Button-1>", lambda e, m=mesa: self._interact_mesa(m))
-            
-            tk.Frame(btn_card, bg=Theme.PRIMARY, height=10).pack(side="bottom", fill="x")
-
-    def _interact_mesa(self, mesa):
-        from tkinter import messagebox, simpledialog
-        if mesa["ocupada"]:
-            if messagebox.askyesno("Mesa Ocupada", f"¿Desea liberar la {mesa['label']} ({mesa['cliente']})?"):
-                mesas = BusinessLogic.get_mesas()
-                for m in mesas:
-                    if m["id"] == mesa["id"]:
-                        m["ocupada"] = False
-                        m["cliente"] = ""
-                BusinessLogic.set_mesas(mesas)
-                self.refresh_mesas()
+        # Grid para productos dentro de la categoría
+        productos = self.billing.get_productos_por_grupo(grupo["id"])
+        if not productos:
+            tk.Label(prod_frame, text="No hay productos en esta categoría", font=Theme.FONT_SMALL, bg=Theme.APP_BG, fg=Theme.TEXT_SECONDARY).pack()
         else:
-            # Opción de renombrar la mesa
-            new_label = simpledialog.askstring("Renombrar Mesa", f"Ingrese nuevo nombre para {mesa['label']}:", initialvalue=mesa['label'])
-            if new_label:
-                mesas = BusinessLogic.get_mesas()
-                for m in mesas:
-                    if m["id"] == mesa["id"]:
-                        m["label"] = new_label.upper()
-                BusinessLogic.set_mesas(mesas)
-                self.refresh_mesas()
+            grid_cont = tk.Frame(prod_frame, bg=Theme.APP_BG)
+            grid_cont.pack(fill="x", padx=10)
+            for i in range(4): grid_cont.columnconfigure(i, weight=1, uniform="gp")
+            
+            for i, p in enumerate(productos):
+                self._create_product_card(grid_cont, p, i)
 
-    def _add_mesa(self):
-        mesas = BusinessLogic.get_mesas()
-        new_id = f"{len(mesas) + 1:02d}"
-        mesas.append({"id": new_id, "label": f"M{new_id}", "ocupada": False, "cliente": ""})
-        BusinessLogic.set_mesas(mesas)
-        self.refresh_mesas()
+    def _create_product_card(self, parent, prod, index):
+        row, col = divmod(index, 4)
+        card = tk.Frame(parent, bg=Theme.SURFACE_LIGHT, highlightthickness=1, highlightbackground=Theme.BORDER, cursor="hand2")
+        card.grid(row=row, column=col, sticky="nsew", padx=4, pady=4)
+        
+        lbl_nombre = tk.Label(card, text=prod["nombre"], font=Theme.FONT_BOLD, bg=Theme.SURFACE_LIGHT, fg=Theme.TEXT_PRIMARY, wraplength=120, cursor="hand2")
+        lbl_nombre.pack(pady=(15, 5))
+        lbl_precio = tk.Label(card, text=f"${prod['precio_usd']:.2f}", font=Theme.FONT_H3, bg=Theme.SURFACE_LIGHT, fg=Theme.ACCENT, cursor="hand2")
+        lbl_precio.pack(pady=(0, 15))
+        
+        # Al hacer clic en la tarjeta o etiquetas, agregar al carrito
+        def on_click(event, p=prod):
+            self._add_item_to_cart(p)
+            
+        card.bind("<Button-1>", on_click)
+        lbl_nombre.bind("<Button-1>", on_click)
+        lbl_precio.bind("<Button-1>", on_click)
 
-    def _remove_mesa(self):
-        mesas = BusinessLogic.get_mesas()
-        if mesas:
-            mesas.pop()
-            BusinessLogic.set_mesas(mesas)
-            self.refresh_mesas()
+    def _toggle_category(self, gid):
+        frame, arrow = self.category_frames[gid]
+        if frame.winfo_viewable():
+            frame.pack_forget()
+            arrow.config(text="▼")
+        else:
+            # Cerrar anterior si queremos comportamiento acordeón único (opcional)
+            # if self.expanded_category and self.expanded_category != gid:
+            #     f, a = self.category_frames[self.expanded_category]
+            #     f.pack_forget()
+            #     a.config(text="▼")
+            
+            frame.pack(fill="x")
+            arrow.config(text="▲")
+            self.expanded_category = gid
+
+    def _on_search(self, *args):
+        query = self.search_query.get().lower().strip()
+        if not query:
+            self._render_accordion()
+            return
+        
+        # Mostrar resultados de búsqueda (aplanado)
+        for w in self.products_container.winfo_children():
+            w.destroy()
+            
+        resultados = self.billing.buscar_productos(query)
+        if not resultados:
+            tk.Label(self.products_container, text="No se encontraron productos", font=Theme.FONT_H2, bg=Theme.APP_BG, fg=Theme.TEXT_SECONDARY, pady=50).pack()
+            return
+
+        grid_cont = tk.Frame(self.products_container, bg=Theme.APP_BG)
+        grid_cont.pack(fill="x", padx=20, pady=20)
+        for i in range(4): grid_cont.columnconfigure(i, weight=1, uniform="search")
+        
+        for i, p in enumerate(resultados):
+            self._create_product_card(grid_cont, p, i)
+
+    def _add_item_to_cart(self, prod):
+        for item in self.cart:
+            if item['id'] == prod['id']:
+                item['cantidad'] += 1
+                self._update_cart_ui()
+                return
+        
+        self.cart.append({
+            'id': prod['id'],
+            'nombre': prod['nombre'],
+            'precio_usd': prod['precio_usd'],
+            'cantidad': 1,
+            'iva_porcentaje': prod.get('iva_porcentaje', 0.16)
+        })
+        self._update_cart_ui()
+
+    def _update_cart_ui(self):
+        # Limpiar items actuales
+        for w in self.cart_items_frame.winfo_children():
+            w.destroy()
+            
+        if not self.cart:
+            tk.Label(self.cart_items_frame, text="El carrito está vacío", bg=Theme.SURFACE, fg=Theme.TEXT_SECONDARY, pady=50).pack()
+            self._update_totals_display()
+            return
+
+        for i, item in enumerate(self.cart):
+            self._create_cart_item_row(item, i)
+        
+        self._update_totals_display()
+
+    def _create_cart_item_row(self, item, index):
+        row = tk.Frame(self.cart_items_frame, bg=Theme.SURFACE, pady=8)
+        row.pack(fill="x", padx=5)
+        
+        # Info Producto
+        info = tk.Frame(row, bg=Theme.SURFACE)
+        info.pack(side="left", fill="both", expand=True)
+        tk.Label(info, text=item["nombre"], font=Theme.FONT_BOLD, bg=Theme.SURFACE, fg=Theme.TEXT_PRIMARY, anchor="w").pack(fill="x")
+        tk.Label(info, text=f"${item['precio_usd']:.2f} c/u", font=Theme.FONT_SMALL, bg=Theme.SURFACE, fg=Theme.TEXT_SECONDARY, anchor="w").pack(fill="x")
+        
+        # Controles de Cantidad
+        ctrl = tk.Frame(row, bg=Theme.SURFACE)
+        ctrl.pack(side="right")
+        
+        # Botones circulares simulados
+        tk.Button(ctrl, text="-", font=Theme.FONT_BOLD, bg=Theme.SURFACE_LIGHT, fg=Theme.TEXT_PRIMARY, relief="flat", width=2, 
+                  command=lambda it=item: self._adjust_qty(it, -1)).pack(side="left", padx=2)
+        
+        tk.Label(ctrl, text=str(item["cantidad"]), font=Theme.FONT_BOLD, bg=Theme.SURFACE, fg=Theme.PRIMARY, width=3).pack(side="left")
+        
+        tk.Button(ctrl, text="+", font=Theme.FONT_BOLD, bg=Theme.SURFACE_LIGHT, fg=Theme.TEXT_PRIMARY, relief="flat", width=2, 
+                  command=lambda it=item: self._adjust_qty(it, 1)).pack(side="left", padx=2)
+        
+        # Botón eliminar
+        tk.Button(ctrl, text="✕", font=Theme.FONT_SMALL, bg=Theme.SURFACE, fg=Theme.DANGER, relief="flat", 
+                  command=lambda idx=index: self._remove_from_cart(idx)).pack(side="left", padx=(10, 0))
+
+        tk.Frame(self.cart_items_frame, bg=Theme.BORDER, height=1).pack(fill="x", padx=10)
+
+    def _adjust_qty(self, item, delta):
+        item['cantidad'] += delta
+        if item['cantidad'] <= 0:
+            self.cart.remove(item)
+        self._update_cart_ui()
+
+    def _remove_from_cart(self, index):
+        self.cart.pop(index)
+        self._update_cart_ui()
+
+    def _update_totals_display(self):
+        subtotal_usd = sum(item['precio_usd'] * item['cantidad'] for item in self.cart)
+        iva_usd = sum(item['precio_usd'] * item['cantidad'] * item['iva_porcentaje'] for item in self.cart)
+        total_usd = subtotal_usd + iva_usd
+        total_bs = total_usd * self.tasa_usd
+        
+        self.total_str.set(f"{total_bs:,.2f}")
+        self.total_usd_str.set(f"{total_usd:,.2f} $")
+        
+        self.lbl_subtotal.config(text=f"{subtotal_usd:,.2f} $")
+        self.lbl_iva.config(text=f"{iva_usd:,.2f} $")
 
     def _on_procesar(self):
-        nombre_cliente = self.entry_mesa.get().strip()
-        if not nombre_cliente:
+        if not self.cart:
+            messagebox.showwarning("Carrito Vacío", "No hay productos para procesar.")
             return
-            
-        mesas = BusinessLogic.get_mesas()
-        # Buscar primera mesa libre
-        mesa_libre = None
-        for m in mesas:
-            if not m["ocupada"]:
-                mesa_libre = m
-                break
         
-        if mesa_libre:
-            mesa_libre["ocupada"] = True
-            mesa_libre["cliente"] = nombre_cliente
-            BusinessLogic.set_mesas(mesas)
-            from tkinter import messagebox
-            messagebox.showinfo("Mesa Asignada", f"Se asignó el cliente '{nombre_cliente}' a la {mesa_libre['label']}")
-            self.entry_mesa.delete(0, tk.END)
-            self.refresh_mesas()
-        else:
-            from tkinter import messagebox
-            messagebox.showwarning("Sin Mesas", "No hay mesas desocupadas disponibles.")
+        if messagebox.askyesno("Confirmar Pago", f"¿Desea finalizar la venta por un total de {self.total_str.get()} Bs?"):
+            # Aquí iría la lógica de guardar factura en DB...
+            messagebox.showinfo("Venta Exitosa", "La venta ha sido procesada correctamente.")
+            self.cart = []
+            self._update_cart_ui()
+            self._render_accordion() # Reset view
+
+    # Dummy methods for compatibility if called from elsewhere
+    def refresh_mesas(self): pass
+    def _render_grupos_grid(self): self._render_accordion()

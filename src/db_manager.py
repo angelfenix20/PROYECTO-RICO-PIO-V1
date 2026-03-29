@@ -109,18 +109,36 @@ class DatabaseManager:
                     monto_inicial REAL NOT NULL,
                     monto_final REAL,
                     ventas_totales REAL DEFAULT 0.0,
-                    usuario TEXT NOT NULL, -- Identificador genérico (ej. 'admin_01')
-                    FOREIGN KEY (usuario) REFERENCES usuarios (username) -- Opcional si se migra usuarios
+                    usuario TEXT NOT NULL,
+                    FOREIGN KEY (usuario) REFERENCES usuarios (username)
                 )
             """)
             
-            # Tabla Usuarios (Para control de acceso modular)
+            # 7. Tabla Usuarios
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS usuarios (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE NOT NULL,
                     password_hash TEXT NOT NULL,
-                    rol TEXT NOT NULL -- 'ADMINISTRADOR', 'CAJERO'
+                    rol TEXT NOT NULL
+                )
+            """)
+
+            # 8. Tabla Mesas (Centralización)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS mesas (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    label TEXT UNIQUE NOT NULL,
+                    ocupada INTEGER DEFAULT 0, -- 0: Libre, 1: Ocupada
+                    cliente TEXT DEFAULT ''
+                )
+            """)
+
+            # 9. Tabla Configuración (Tasa USD, etc.)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS configuracion (
+                    clave TEXT PRIMARY KEY,
+                    valor TEXT NOT NULL
                 )
             """)
             
@@ -131,45 +149,70 @@ class DatabaseManager:
         """Migra datos iniciales desde config.json si existen y la base de datos está vacía."""
         cursor = conn.cursor()
         
-        # Verificar si ya hay grupos
+        config_path = os.path.join(os.path.dirname(self._DB_NAME), "config.json")
+        config_data = {}
+        if os.path.exists(config_path):
+            import json
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    config_data = json.load(f)
+            except Exception as e:
+                print(f"Error leyendo config.json: {e}")
+
+        # Migrar Grupos
         cursor.execute("SELECT COUNT(*) FROM grupos")
         if cursor.fetchone()[0] == 0:
-            config_path = os.path.join(os.path.dirname(self._DB_NAME), "config.json")
-            if os.path.exists(config_path):
-                import json
-                try:
-                    with open(config_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        if "grupos" in data:
-                            for g in data["grupos"]:
-                                cursor.execute("INSERT INTO grupos (codigo, nombre, color) VALUES (?, ?, ?)", 
-                                               (g.get("codigo"), g.get("nombre"), g.get("color", "#CCCCCC")))
-                    conn.commit()
-                except Exception as e:
-                    print(f"Error migrando grupos: {e}")
+            if "grupos" in config_data:
+                for g in config_data["grupos"]:
+                    cursor.execute("INSERT INTO grupos (codigo, nombre, color) VALUES (?, ?, ?)", 
+                                   (g.get("codigo"), g.get("nombre"), g.get("color", "#CCCCCC")))
             else:
-                # Datos quemados de contingencia
                 default_grupos = [
-                    ("01", "PIZZAS", "#FF8C00"),
-                    ("02", "HAMBURGUESAS", "#8B4513"),
-                    ("03", "BEBIDAS", "#FF0000"),
-                    ("04", "POSTRES", "#6495ED")
+                    ("01", "PIZZAS", "#FF8C00"), ("02", "HAMBURGUESAS", "#8B4513"),
+                    ("03", "BEBIDAS", "#FF0000"), ("04", "POSTRES", "#6495ED")
                 ]
                 for cod, nom, col in default_grupos:
                     cursor.execute("INSERT INTO grupos (codigo, nombre, color) VALUES (?, ?, ?)", (cod, nom, col))
-                conn.commit()
 
-        # Migración de Esquema para versión 2: Añadir color e imagen_path si no existen
+        # Migrar Mesas
+        cursor.execute("SELECT COUNT(*) FROM mesas")
+        if cursor.fetchone()[0] == 0:
+            if "mesas" in config_data:
+                for m in config_data["mesas"]:
+                    cursor.execute("INSERT INTO mesas (label, ocupada, cliente) VALUES (?, ?, ?)", 
+                                   (m.get("label"), 1 if m.get("ocupada") else 0, m.get("cliente", "")))
+            else:
+                for i in range(1, 26):
+                    cursor.execute("INSERT INTO mesas (label) VALUES (?)", (f"M{i:02d}",))
+
+        # Migrar Tasa USD
+        cursor.execute("SELECT COUNT(*) FROM configuracion WHERE clave = 'tasa_usd'")
+        if cursor.fetchone()[0] == 0:
+            tasa = config_data.get("tasa_usd", "468.51")
+            cursor.execute("INSERT INTO configuracion (clave, valor) VALUES (?, ?)", ("tasa_usd", str(tasa)))
+
+        # Semillar Productos si la tabla está vacía
+        cursor.execute("SELECT COUNT(*) FROM productos")
+        if cursor.fetchone()[0] == 0:
+            productos_semilla = [
+                ("P001", "Pizza Margarita", 8.50, 1, 0.16, "#FF8C00"),
+                ("P002", "Pizza Pepperoni", 10.00, 1, 0.16, "#FF8C00"),
+                ("H001", "Hamburguesa Clásica", 5.50, 2, 0.16, "#8B4513"),
+                ("B001", "Refresco Familiar", 2.00, 3, 0.16, "#FF0000"),
+            ]
+            for cod, nom, pre, gid, iva, col in productos_semilla:
+                cursor.execute("INSERT INTO productos (codigo, nombre, precio_usd, grupo_id, iva_porcentaje, color) VALUES (?, ?, ?, ?, ?, ?)",
+                               (cod, nom, pre, gid, iva, col))
+
+        # Migración de Esquema V2
         try:
             cursor.execute("SELECT color FROM productos LIMIT 1")
         except sqlite3.OperationalError:
-            print("Aplicando migración V2: Añadiendo columna 'color' a 'productos'")
             cursor.execute("ALTER TABLE productos ADD COLUMN color TEXT DEFAULT '#CCCCCC'")
             
         try:
             cursor.execute("SELECT imagen_path FROM productos LIMIT 1")
         except sqlite3.OperationalError:
-            print("Aplicando migración V2: Añadiendo columna 'imagen_path' a 'productos'")
             cursor.execute("ALTER TABLE productos ADD COLUMN imagen_path TEXT DEFAULT ''")
         
         conn.commit()
