@@ -55,7 +55,10 @@ class RicoPioApp:
         self.mostrar_punto_venta()
 
     def mostrar_punto_venta(self):
-        self._switch_frame(PuntoVentaPanel, geometry="1024x720")
+        # En la nueva UI central, Punto Venta es un Modal sobre la vista de mesas. 
+        # Cargar la vista de Mesas por defecto
+        from panels.mesas_view import MesasView
+        self._switch_frame(MesasView, geometry="1024x720")
 
 
 if __name__ == "__main__":

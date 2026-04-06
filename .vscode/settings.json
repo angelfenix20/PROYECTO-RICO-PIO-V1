@@ -2,6 +2,6 @@
     "python.defaultInterpreterPath": "C:\\Users\\HP\\AppData\\Local\\Programs\\Python\\Python313-32\\python.exe",
     "python.terminal.activateEnvironment": true,
     "python.analysis.extraPaths": [
-        "c:/Users/HP/Documents/rico pio v1/PROYECTO-RICO-PIO-V1/src"
+        "./src"
     ]
 }

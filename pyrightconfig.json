@@ -3,7 +3,7 @@
         {
             "root": ".",
             "extraPaths": [
-                "c:/Users/HP/Documents/rico pio v1/PROYECTO-RICO-PIO-V1/src"
+                "./src"
             ]
         }
     ]

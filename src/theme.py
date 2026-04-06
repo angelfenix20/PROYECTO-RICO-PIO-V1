@@ -17,6 +17,8 @@ class Theme:
     ACCENT = "#f59e0b"        # Amber 500 (Alertas)
     DANGER = "#ef4444"        # Rose 500
     SUCCESS = "#10b981"
+    BLUE = "#3b82f6"          # Blue 500 (Para Factura)
+    ORANGE = "#f97316"        # Orange 500 (Para Fiar)
     
     # --- Tipografías (Moderna) ---
     FONT_FAMILY = "Segoe UI"
